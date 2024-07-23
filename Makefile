@@ -6,6 +6,7 @@ CFLAGS = -Wvla -Wextra -Werror
 
 # Source directory
 SRC_DIR = src
+Dest_DIR = build
 
 # Output binary
 TARGET = main
@@ -18,8 +19,7 @@ all: $(TARGET)
 
 # Build target
 $(TARGET): $(SRC_FILES)
-	$(CC) $(CFLAGS) $(SRC_FILES) -o $(TARGET)
-
+	$(CC) $(CFLAGS) -o  $(Dest_DIR)/$(TARGET) $(SRC_FILES)
 # Clean target
 clean:
-	rm -f $(TARGET)
+	rm -rf $(Dest_DIR)
