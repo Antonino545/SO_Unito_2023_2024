@@ -9,10 +9,10 @@ SRC_DIR = src
 Dest_DIR = build
 
 # Output binary
-TARGET = main
+TARGET = manster
 
 # Source files
-SRC_FILES = $(SRC_DIR)/main.c
+SRC_FILES = $(SRC_DIR)/$(TARGET).c
 
 # Default target
 all: $(TARGET)
