@@ -20,4 +20,4 @@ COPY . .
 RUN make
 
 # Run the compiled program
-CMD ["./main"]
+CMD ["./build/manster"]
