@@ -19,6 +19,7 @@ all: $(TARGET)
 
 # Build target
 $(TARGET): $(SRC_FILES)
+	mkdir -p $(Dest_DIR)
 	$(CC) $(CFLAGS) -o  $(Dest_DIR)/$(TARGET) $(SRC_FILES)
 # Clean target
 clean:
