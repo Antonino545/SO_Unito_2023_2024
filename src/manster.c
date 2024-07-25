@@ -10,7 +10,10 @@
 
 int N_ATOMI_INIT, N_ATOM_MAX, MIN_N_ATOMICO, ENERGY_DEMAND, STEP, N_NUOVI_ATOMI, SIM_DURATION, ENERGY_EXPLODE_THRESHOLD;
 
-
+int generate_random(int max) {
+    srand(time(NULL) ^ getpid());// serve per generare numeri casuali diversi per ogni processo se lanciato in contemporanea
+    return rand() % max + 1;
+}
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
  */
@@ -21,7 +24,7 @@ void createAtomo() {
         perror("fork failed");
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
-        int numero_atomico = N_ATOM_MAX;
+        int numero_atomico = generate_random(N_ATOM_MAX);
         char num_atomico_str[10];
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
 
