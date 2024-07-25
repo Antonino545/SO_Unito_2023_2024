@@ -1,9 +1,9 @@
 Build docker in caso ci siano modifiche nel dockerfile
-docker build --platform linux/amd64 -t ubuntu18-project:latest .
+docker build --platform linux/amd64 -t u    ubuntu-so  .
 Run docker per mac di Antonino
- docker run -it --name Ubuntu-SO \
+docker run -it --name SO-Project \         
     -v "/Users/antonino/Documents/Project/Unito Project/SO-2024":/SO-2024 \
-    ubuntu18-project:latest
+    ubuntu-so      
 Se Docker e gia in esecuzione
 docker ps
 docker exec -it Ubuntu-SO bash
