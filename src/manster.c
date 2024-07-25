@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <pthread.h>
 
 
 // Dichiarazione della funzione genNumeroAtomico
