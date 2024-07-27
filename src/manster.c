@@ -9,7 +9,10 @@
 #define _GNU_SOURCE
 
 int N_ATOMI_INIT, N_ATOM_MAX, MIN_N_ATOMICO, ENERGY_DEMAND, STEP, N_NUOVI_ATOMI, SIM_DURATION, ENERGY_EXPLODE_THRESHOLD;
-
+/**
+ * Genera un numero casuale tra 1 e `max`. 
+ * @param max Il valore massimo che può essere generato.
+ */
 int generate_random(int max) {
     srand(time(NULL) ^ getpid());// serve per generare numeri casuali diversi per ogni processo se lanciato in contemporanea
     return rand() % max + 1;
@@ -20,24 +23,23 @@ int generate_random(int max) {
 void createAtomo() {
     pid_t pid = fork();
 
-    if (pid < 0) {
-        perror("fork failed");
+    if (pid < 0) { // Processo non creato
+        perror("Errore nella fork");
         exit(EXIT_FAILURE);
-    } else if (pid == 0) {
+    } else if (pid == 0) { // Processo figlio
         int numero_atomico = generate_random(N_ATOM_MAX);
         char num_atomico_str[10];
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
 
-        printf("Figlio %d: Sto diventando un atomo con numero atomico %d\n", getpid(), numero_atomico);
+        printf("Figlio (PID: %d): Sto diventando un atomo con numero atomico %d\n", getpid(), numero_atomico);
 
         // Esegui `atomo` con il numero atomico come argomento
-        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) {
-            perror("execlp failed in creating atomo");
+        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) { // execlp ritorna -1 se fallisce
+            perror("Errore in execlp durante la creazione del processo atomo");
             exit(EXIT_FAILURE);
         }
-    } else {
-        // Processo padre
-        printf("Manster: Creazione di un atomo pid: %d\n", pid);
+    } else { // Processo padre
+        printf("Manster: Creazione di un atomo con PID: %d\n", pid);
     }
 }
 
@@ -87,8 +89,6 @@ void readparameters() {
 }
 
 int main() {
-    srand(time(NULL));  // Inizializza il generatore di numeri casuali
-
     readparameters();
     printf("Manster: Inizio simulazione ho pid %d\n", getpid());
     printf("Manster: Parametri letti dal file di configurazione:\n");
@@ -98,8 +98,12 @@ int main() {
     }
     printf("Manster: Fine creazione atomi iniziali\n");
 
-    // Attende la terminazione di tutti i figli
-    while (wait(NULL) > 0);
+    // La funzione wait sospende l'esecuzione del processo chiamante fino alla terminazione di un processo figlio.
+    //* Se NULL viene passato come argomento, wait non memorizza lo stato di terminazione del figlio.
+    //* Se il processo chiamante non ha figli, wait restituisce -1.
+    // La funzione restituisce il PID del processo figlio terminato.
 
-    return 0;
+	while(wait(NULL) != -1);// Attende la terminazione di tutti i figli
+
+    exit(EXIT_SUCCESS);
 }

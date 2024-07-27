@@ -10,8 +10,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     int numero_atomico = atoi(argv[1]);
-    printf("Atomo %d: Ho un numero atomico di %d\n", getpid(), numero_atomico);
-    printf("Atomo %d: il mio ppid è %d\n", getpid(), getppid());
-
+    printf("Atomo %d: Sono un atomo con numero atomico %d\n", getpid(), numero_atomico);
     return 0;
 }

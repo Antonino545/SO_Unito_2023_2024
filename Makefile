@@ -3,12 +3,6 @@ CC = gcc
 
 # Compiler flags
 CFLAGS = -Wvla -Wextra -Werror
-
-# Define DO_WAIT if needed
-ifdef DO_WAIT
-    CFLAGS += -DDO_WAIT
-endif
-
 # Source and build directories
 SRC_DIR = src
 DEST_DIR = build
