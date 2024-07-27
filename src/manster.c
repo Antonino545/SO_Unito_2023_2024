@@ -5,18 +5,12 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <time.h>
+#include "lib.h"
 
 #define _GNU_SOURCE
 
 int N_ATOMI_INIT, N_ATOM_MAX, MIN_N_ATOMICO, ENERGY_DEMAND, STEP, N_NUOVI_ATOMI, SIM_DURATION, ENERGY_EXPLODE_THRESHOLD;
-/**
- * Genera un numero casuale tra 1 e `max`. 
- * @param max Il valore massimo che può essere generato.
- */
-int generate_random(int max) {
-    srand(time(NULL) ^ getpid());// serve per generare numeri casuali diversi per ogni processo se lanciato in contemporanea
-    return rand() % max + 1;
-}
+
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
  */

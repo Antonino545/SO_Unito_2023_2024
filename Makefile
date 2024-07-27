@@ -10,19 +10,28 @@ DEST_DIR = build
 # Source files
 SRC_FILES_MANSTER = $(SRC_DIR)/manster.c 
 SRC_FILE_ATOMO = $(SRC_DIR)/atomo.c
+SRC_FILE_LIB = $(SRC_DIR)/lib.c
+
+# Object files
+OBJ_FILE_LIB = $(DEST_DIR)/lib.o
 
 # Default target
 all: manster atomo
 
 # Build manster target
-manster: $(SRC_FILES_MANSTER)
+manster: $(OBJ_FILE_LIB) $(SRC_FILES_MANSTER)
 	mkdir -p $(DEST_DIR)
-	$(CC) $(CFLAGS) -o $(DEST_DIR)/manster $(SRC_FILES_MANSTER)
+	$(CC) $(CFLAGS) -o $(DEST_DIR)/manster $(OBJ_FILE_LIB) $(SRC_FILES_MANSTER)
 
 # Build atomo target
-atomo: $(SRC_FILE_ATOMO)
+atomo: $(OBJ_FILE_LIB) $(SRC_FILE_ATOMO)
 	mkdir -p $(DEST_DIR)
-	$(CC) $(CFLAGS) -o $(DEST_DIR)/atomo $(SRC_FILE_ATOMO)
+	$(CC) $(CFLAGS) -o $(DEST_DIR)/atomo $(OBJ_FILE_LIB) $(SRC_FILE_ATOMO)
+
+# Build lib.o target
+$(OBJ_FILE_LIB): $(SRC_FILE_LIB) $(SRC_DIR)/lib.h
+	mkdir -p $(DEST_DIR)
+	$(CC) $(CFLAGS) -c $(SRC_FILE_LIB) -o $(OBJ_FILE_LIB)
 
 # Clean target
 clean:
