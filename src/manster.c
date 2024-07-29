@@ -37,7 +37,42 @@ void createAtomo() {
         printf("Manster: Creazione di un atomo con PID: %d\n", pid);
     }
 }
+void createAttivatore(){
+    pid_t pid = fork();
 
+    if (pid < 0) { // Processo non creato
+        perror("Errore nella fork:");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) { // Processo figlio
+        printf("Figlio (PID: %d): Sto diventando un attivatore\n", getpid());
+
+        // Esegui `attivatore`
+        if (execlp("./attivatore", "attivatore", NULL) == -1) { // execlp ritorna -1 se fallisce
+            perror("Errore in execlp durante la creazione del processo attivatore");
+            exit(EXIT_FAILURE);
+        }
+    } else { // Processo padre
+        printf("Manster: Creazione di un attivatore con PID: %d\n", pid);
+    }
+}
+void createAlimentazione(){
+    pid_t pid = fork();
+
+    if (pid < 0) { // Processo non creato
+        perror("Errore nella fork:");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) { // Processo figlio
+        printf("Figlio (PID: %d): Sto diventando il processo alimentazione\n", getpid());
+
+        // Esegui `alimentatore`
+        if (execlp("./alimentazione", "alimentazione", NULL) == -1) { // execlp ritorna -1 se fallisce
+            perror("Errore in execlp durante la creazione del processo alimentatore");
+            exit(EXIT_FAILURE);
+        }
+    } else { // Processo padre
+        printf("Manster: Creazione di un alimentatore con PID: %d\n", pid);
+    }
+}
 /**
  * Funzione per leggere i parametri dal file di configurazione
  */
@@ -93,6 +128,10 @@ int main() {
     }
     printf("Manster: Inizio simulazione ho pid %d\n", getpid());
     printf("Manster: Parametri letti dal file di configurazione:\n");
+    printf("Manster:Creazione del processo alimentatore\n");
+    createAlimentazione();
+    printf("Manster:Creazione del processo attivatore\n");
+    createAttivatore();
     printf("Manster: Inizio creazione atomi iniziali\n");
     for (int i = 0; i < N_ATOMI_INIT; i++) {
         createAtomo();

@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wvla -Wextra -Werror
 
 # Default target
-all: manster atomo
+all: manster atomo alimentazione attivatore
 
 # Build manster target
 manster: build/lib.o src/manster.c
@@ -16,7 +16,13 @@ manster: build/lib.o src/manster.c
 atomo: build/lib.o src/atomo.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -o build/atomo build/lib.o src/atomo.c
+alimentazione: build/lib.o src/alimentazione.c
+	mkdir -p build
+	$(CC) $(CFLAGS) -o build/alimentazione build/lib.o src/alimentazione.c
 
+attivatore: build/lib.o src/attivatore.c
+	mkdir -p build
+	$(CC) $(CFLAGS) -o build/attivatore build/lib.o src/attivatore.c
 # Build lib.o target
 build/lib.o: src/lib.c src/lib.h
 	mkdir -p build
