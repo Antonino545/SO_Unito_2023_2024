@@ -18,11 +18,12 @@ void createAtomo() {
     pid_t pid = fork();
 
     if (pid < 0) { // Processo non creato
-        perror("Errore nella fork");
+        perror("Errore nella fork:");
         exit(EXIT_FAILURE);
     } else if (pid == 0) { // Processo figlio
-        int numero_atomico = generate_random(N_ATOM_MAX);
-        char num_atomico_str[10];
+        int numero_atomico = generate_random(N_ATOM_MAX);// Genera un numero atomico casuale tra 1 e N_ATOM_MAX
+        char num_atomico_str[20];
+        
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
 
         printf("Figlio (PID: %d): Sto diventando un atomo con numero atomico %d\n", getpid(), numero_atomico);
@@ -40,8 +41,7 @@ void createAtomo() {
 /**
  * Funzione per leggere i parametri dal file di configurazione
  */
-void readparameters() {
-    FILE *file = fopen("../Data/parameters.txt", "r");
+void readparameters(FILE *file) {
     if (file == NULL) {
         perror("Errore nell'apertura del file di configurazione");
         exit(EXIT_FAILURE);
@@ -83,7 +83,14 @@ void readparameters() {
 }
 
 int main() {
-    readparameters();
+        FILE *file = fopen("../Data/parameters.txt", "r");
+    if (file == NULL) {
+        perror("Errore nell'apertura del file di configurazione");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        readparameters(file);
+    }
     printf("Manster: Inizio simulazione ho pid %d\n", getpid());
     printf("Manster: Parametri letti dal file di configurazione:\n");
     printf("Manster: Inizio creazione atomi iniziali\n");

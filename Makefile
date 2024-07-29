@@ -39,7 +39,7 @@ clean:
 
 # Run target
 run: all
-	./$(DEST_DIR)/manster
+	cd $(DEST_DIR) && ./manster
 
 # Phony targets
 .PHONY: all manster atomo clean run
