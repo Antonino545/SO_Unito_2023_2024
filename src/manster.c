@@ -9,7 +9,6 @@
 
 #define _GNU_SOURCE
 
-int N_ATOMI_INIT, N_ATOM_MAX, MIN_N_ATOMICO, ENERGY_DEMAND, STEP, N_NUOVI_ATOMI, SIM_DURATION, ENERGY_EXPLODE_THRESHOLD;
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
@@ -118,7 +117,7 @@ void readparameters(FILE *file) {
 }
 
 int main() {
-        FILE *file = fopen("../Data/parameters.txt", "r");
+    FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL) {
         perror("Errore nell'apertura del file di configurazione");
         exit(EXIT_FAILURE);
