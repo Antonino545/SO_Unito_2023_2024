@@ -7,26 +7,28 @@ CFLAGS = -Wvla -Wextra -Werror
 # Default target
 all: manster atomo alimentazione attivatore
 
+# Linker flags
+LDFLAGS = -lrt
+
 # Build manster target
-manster: build/lib.o src/manster.c
+manster: src/manster.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/manster build/lib.o src/manster.c
+	$(CC) $(CFLAGS) -o build/manster src/manster.c $(LDFLAGS)
 
 # Build atomo target
-atomo: build/lib.o src/atomo.c
+atomo: src/atomo.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/atomo build/lib.o src/atomo.c
-alimentazione: build/lib.o src/alimentazione.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -o build/alimentazione build/lib.o src/alimentazione.c
+	$(CC) $(CFLAGS) -o build/atomo src/atomo.c $(LDFLAGS)
 
-attivatore: build/lib.o src/attivatore.c
+# Build alimentazione target
+alimentazione: src/alimentazione.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/attivatore build/lib.o src/attivatore.c
-# Build lib.o target
-build/lib.o: src/lib.c src/lib.h
+	$(CC) $(CFLAGS) -o build/alimentazione src/alimentazione.c $(LDFLAGS)
+
+# Build attivatore target
+attivatore: src/attivatore.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -c src/lib.c -o build/lib.o
+	$(CC) $(CFLAGS) -o build/attivatore src/attivatore.c $(LDFLAGS)
 
 # Clean target
 clean:
@@ -37,4 +39,4 @@ run: all
 	cd build && ./manster
 
 # Phony targets
-.PHONY: all manster atomo clean run
+.PHONY: all manster atomo alimentazione attivatore clean run
