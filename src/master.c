@@ -7,9 +7,17 @@
 #include <time.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 #include "lib.h"
 
-#define _GNU_SOURCE
+#define MSGSZ 128
+
+// Definizione della struttura del messaggio
+typedef struct msgbuf {
+    long mtype;
+    char mtext[MSGSZ];
+} message_buf;
 
 // Definizione delle variabili come puntatori che punteranno a memoria condivisa
 int *N_ATOMI_INIT;
@@ -20,6 +28,7 @@ int *STEP;
 int *N_NUOVI_ATOMI;
 int *SIM_DURATION;
 int *ENERGY_EXPLODE_THRESHOLD;
+int msqid;
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
@@ -110,7 +119,6 @@ void readparameters(FILE *file) {
 
         // Parsea la linea in formato chiave=valore
         if (sscanf(line, "%127[^=]=%d", key, &value) == 2) { // Parsea la linea nel formato chiave=valore
-            // Assegna il valore alla variabile corrispondente
             if (strcmp(key, "N_ATOMI_INIT") == 0) {
                 *N_ATOMI_INIT = value;
             } else if (strcmp(key, "N_ATOM_MAX") == 0) {
@@ -127,11 +135,7 @@ void readparameters(FILE *file) {
                 *SIM_DURATION = value;
             } else if (strcmp(key, "ENERGY_EXPLODE_THRESHOLD") == 0) {
                 *ENERGY_EXPLODE_THRESHOLD = value;
-            } else {
-                fprintf(stderr, "Chiave sconosciuta: %s\n", key);
             }
-        } else {
-            fprintf(stderr, "Formato di riga non valido: %s\n", line);
         }
     }
 
@@ -189,6 +193,13 @@ int main() {
     // Stampa informazioni di inizio simulazione
     printf("Master (PID: %d): Parametri letti dal file di configurazione\n", getpid());
 
+    // Creazione della coda di messaggi
+    key_t key = 1234;
+    if ((msqid = msgget(key, IPC_CREAT | 0666)) < 0) {
+        perror("msgget");
+        exit(1);
+    }
+
     printf("Master (PID: %d): Inizio creazione atomi iniziali\n", getpid());
     for (int i = 0; i < *N_ATOMI_INIT; i++) {
         createAtomo();
@@ -202,6 +213,16 @@ int main() {
     printf("Master (PID: %d): Creazione del processo attivatore\n", getpid());
     createAttivatore();
 
+    // Ricezione dei messaggi dai processi
+    message_buf rbuf;
+    for (int i = 0; i < *N_ATOMI_INIT + 2; i++) { // +2 per attivatore e alimentatore
+        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
+            perror("msgrcv");
+            exit(1);
+        }
+        printf("Master ha ricevuto: %s\n", rbuf.mtext);
+    }
+
     // Avvia la simulazione
     printf("Master (PID: %d): Inizio simulazione\n", getpid());
 
@@ -210,6 +231,12 @@ int main() {
 
     // Pulizia della memoria condivisa
     shm_unlink(shm_name);
+
+    // Rimuove la coda di messaggi
+    if (msgctl(msqid, IPC_RMID, NULL) < 0) {
+        perror("msgctl");
+        exit(1);
+    }
 
     exit(EXIT_SUCCESS);
 }

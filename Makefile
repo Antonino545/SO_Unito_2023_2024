@@ -5,15 +5,15 @@ CC = gcc
 CFLAGS = -Wvla -Wextra -Werror
 
 # Default target
-all: manster atomo alimentazione attivatore
+all: master atomo alimentazione attivatore
 
 # Linker flags
 LDFLAGS = -lrt
 
-# Build manster target
-manster: src/manster.c
+# Build master target
+master: src/master.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/manster src/manster.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/master src/master.c $(LDFLAGS)
 
 # Build atomo target
 atomo: src/atomo.c
@@ -36,7 +36,7 @@ clean:
 
 # Run target
 run: all
-	cd build && ./manster
+	cd build && ./master
 
 # Phony targets
-.PHONY: all manster atomo alimentazione attivatore clean run
+.PHONY: all master atomo alimentazione attivatore clean run
