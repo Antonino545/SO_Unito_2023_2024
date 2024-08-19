@@ -41,14 +41,14 @@ void setup_ParametresMemory() {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Uso: %s <numero_atomico>\n", argv[0]);
+        fprintf(stderr, "[ERROR] Atomo (PID: %d): Numero di argomenti errato\n", getpid());
         exit(EXIT_FAILURE);
     }
 
     setup_ParametresMemory(); // Setup della memoria condivisa
 
     numero_atomico = atoi(argv[1]);
-    printf("Atomo %d: Sono un atomo con numero atomico %d\n", getpid(), numero_atomico);
+    printf("[INFO] Atomo (PID: %d): Sono stato appena creato con numero atomico %d\n", getpid(), numero_atomico);
 
     if (numero_atomico < *MIN_N_ATOMICO) {
         exit(EXIT_SUCCESS);
@@ -71,6 +71,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    pause();
+
     exit(EXIT_SUCCESS);
 }
