@@ -98,18 +98,18 @@ void createAlimentazione(){
 void readparameters(FILE *file) {
     if (file == NULL) { // Verifica che il file sia stato aperto correttamente
         perror("Errore nell'apertura del file di configurazione");
-        exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE);//Sono Costanti definite in stdlib.h e indicano rispettivamente il successo e il fallimento di un programma
     }
 
-    char line[256]; // Buffer per leggere ogni linea del file
+    char line[256]; // Buffer per leggere ogni linea del file viene messo a 128 perchè non si sa la lunghezza delle righe del file
     while (fgets(line, sizeof(line), file)) { // Legge il file riga per riga
-        line[strcspn(line, "\r\n")] = 0; // Rimuove il carattere di newline
+        line[strcspn(line, "\r\n")] = 0; // Rimuove il carattere di newline perche fgets legge anche il newline \r e \n e li mette in line quindi vanno rimossi perche uguale
         
         char key[128];
         int value;
 
         // Parsea la linea in formato chiave=valore
-        if (sscanf(line, "%127[^=]=%d", key, &value) == 2) {
+        if (sscanf(line, "%127[^=]=%d", key, &value) == 2) {//perche usa 127 e non 128 ? perche l'ultimo carattere è per il terminatore di stringa \0 
             // Assegna il valore alla variabile corrispondente
             if (strcmp(key, "N_ATOMI_INIT") == 0) {
                 *N_ATOMI_INIT = value;
@@ -144,7 +144,8 @@ int main() {
     const size_t shm_size = 8 * sizeof(int); // 8 interi
 
     // Crea o apre una memoria condivisa
-    //shm_fd serve per identificare la memoria condivisa 
+    //A file descriptor (fd) identifies a source/destination of a sequence of bytes File descriptors are of type int
+    //shm_fd serve per identificare la memoria condivisa ("Detto facile")
     //sgm_name é il nome della memoria condivisa
     //O_CREAT indica che se la memoria condivisa non esiste, deve essere creata
     //O_RDWR indica che la memoria condivisa è sia leggibile che scrivibile
@@ -155,14 +156,16 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    // Imposta la dimensione della memoria condivisa
+    // Imposta la dimensione della memoria condivisa 
+    //le funzioni che iniziano con f sono funzione stream e sono di tipo  " *FILE 
     if (ftruncate(shm_fd, shm_size) == -1) {//ftruncate serve per impostare la dimensione della memoria condivisa
         perror("Errore nella ftruncate");
         exit(EXIT_FAILURE);
     }
 
-    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
+    // Mappa la memoria condivisa nel proprio spazio degli indirizzi che serve per accedere alla memoria condivisa
     //shm_size è la dimensione della memoria condivisa
+    //PROT vul dire protezione 
     //PROT_READ | PROT_WRITE indica che la memoria condivisa è sia leggibile che scrivibile
     //MAP_SHARED indica che la memoria condivisa è condivisa tra più processi
     //shm_fd è il file descriptor della memoria condivisa che serve per identificarla 

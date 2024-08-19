@@ -50,15 +50,15 @@ int main(int argc, char *argv[]) {
     printf("Atomo %d: Sono un atomo con numero atomico %d\n", getpid(), numero_atomico);
 
     if (numero_atomico < *MIN_N_ATOMICO) { // Usa la variabile condivisa
-        return 0;
+        exit(EXIT_SUCCESS);
     }
 
     atomdivision();
-    return 0;
+    exit(EXIT_SUCCESS);
 }
 
 void atomdivision() {
-    int numero_atomico_figlio = generate_random(numero_atomico); // Genera un numero atomico per il figlio
+    int numero_atomico_figlio = generate_random(numero_atomico-1); // Genera un numero atomico per il figlio
     numero_atomico = numero_atomico - numero_atomico_figlio; // Calcola il numero atomico rimanente per il padre
 
     pid_t pid = fork();
@@ -78,7 +78,7 @@ void atomdivision() {
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
-        printf("Atomo %d: Mi sto scindendo in due atomi con numeri atomici %d e %d\n", getpid(), numero_atomico, numero_atomico_figlio);
+        printf("Atomo %d: Mi sto per scindendo in due atomi con numeri atomici %d e %d\n", getpid(), numero_atomico, numero_atomico_figlio);
 
         // Attendi la terminazione del processo figlio
         wait(NULL);
