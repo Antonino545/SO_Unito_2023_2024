@@ -11,9 +11,10 @@
 
 int numero_atomico = 0;
 int *MIN_N_ATOMICO;
-
-void setup_shared_memory() {
-    const char *shm_name = "/shared_mem";
+void atomdivision();
+int energialiberata(int numero_atomico_padre, int numero_atomico_figlio);
+void setup_ParametresMemory() {
+    const char *shm_name = "/Parametres";
     const size_t shm_size = 8 * sizeof(int); // 8 interi
 
     int shm_fd = shm_open(shm_name, O_RDWR, 0666);// Apre la memoria condivisa in lettura e scrittura che e gia stata creata
@@ -36,7 +37,6 @@ void setup_shared_memory() {
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));//recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
 }
 
-void atomdivision();
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    setup_shared_memory(); // Setup della memoria condivisa
+    setup_ParametresMemory(); // Setup della memoria condivisa
 
     numero_atomico = atoi(argv[1]);
     printf("Atomo %d: Sono un atomo con numero atomico %d\n", getpid(), numero_atomico);
@@ -52,14 +52,20 @@ int main(int argc, char *argv[]) {
     if (numero_atomico < *MIN_N_ATOMICO) { // Usa la variabile condivisa
         exit(EXIT_SUCCESS);
     }
-
-    atomdivision();
+    pause();
     exit(EXIT_SUCCESS);
 }
 
+
 void atomdivision() {
-    int numero_atomico_figlio = generate_random(numero_atomico-1); // Genera un numero atomico per il figlio
+    int numero_atomico_figlio = generate_random(numero_atomico - 1); // Genera un numero atomico per il figlio
     numero_atomico = numero_atomico - numero_atomico_figlio; // Calcola il numero atomico rimanente per il padre
+
+    int pipefd[2];
+    if (pipe(pipefd) == -1) { // Crea una pipe
+        perror("Errore nella creazione della pipe:");
+        exit(EXIT_FAILURE);
+    }
 
     pid_t pid = fork();
 
@@ -67,6 +73,8 @@ void atomdivision() {
         perror("Errore nella fork:");
         exit(EXIT_FAILURE);
     } else if (pid == 0) { // Processo figlio
+        close(pipefd[0]); // Chiudi il lato di lettura della pipe nel processo figlio
+
         char num_atomico_figlio_str[20];
         snprintf(num_atomico_figlio_str, sizeof(num_atomico_figlio_str), "%d", numero_atomico_figlio);
 
@@ -77,10 +85,29 @@ void atomdivision() {
             perror("Errore in execlp durante la creazione del processo atomo");
             exit(EXIT_FAILURE);
         }
+
+        // Scrivi un segnale nella pipe per indicare che il figlio ha eseguito le istruzioni iniziali
+        write(pipefd[1], "1", 1);
+        close(pipefd[1]); // Chiudi il lato di scrittura della pipe nel processo figlio
     } else { // Processo padre
-        printf("Atomo %d: Mi sto per scindendo in due atomi con numeri atomici %d e %d\n", getpid(), numero_atomico, numero_atomico_figlio);
+        close(pipefd[1]); // Chiudi il lato di scrittura della pipe nel processo padre
+
+        printf("Atomo %d: Mi sto per scindere in due atomi con numeri atomici %d e %d\n", getpid(), numero_atomico, numero_atomico_figlio);
+
+        // Aspetta che il figlio segnali di aver eseguito le sue istruzioni iniziali
+        char buf;
+        read(pipefd[0], &buf, 1);
+        close(pipefd[0]); // Chiudi il lato di lettura della pipe nel processo padre
+
+        // Ora libera l'energia
+        energialiberata(numero_atomico, numero_atomico_figlio);
 
         // Attendi la terminazione del processo figlio
         wait(NULL);
     }
+}
+int energialiberata(int numero_atomico_padre, int numero_atomico_figlio){
+    int energia= numero_atomico_figlio*numero_atomico_padre - max(numero_atomico_figlio, numero_atomico_padre);
+    printf("Atomo %d: Ho liberato %d Joule di energia\n", getpid(), energia);
+    return energia;
 }

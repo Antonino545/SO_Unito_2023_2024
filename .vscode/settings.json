@@ -1,5 +1,7 @@
 {
   "files.associations": {
-    "cstdlib": "c"
+    "*.embeddedhtml": "html",
+    "cstdlib": "c",
+    "limits": "c"
   }
 }

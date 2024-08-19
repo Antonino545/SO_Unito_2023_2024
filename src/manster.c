@@ -44,14 +44,14 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
-        printf("Master: Creazione di un atomo con PID: %d\n", pid);
+        printf("Master (PID: %d): Creazione di un atomo con PID: %d\n", getpid(), pid);
     }
 }
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `attivatore`.
  */
-void createAttivatore(){
+void createAttivatore() {
     pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0) { // Processo non creato
@@ -66,14 +66,14 @@ void createAttivatore(){
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
-        printf("Master: Creazione di un attivatore con PID: %d\n", pid);
+        printf("Master (PID: %d): Creazione di un attivatore con PID: %d\n", getpid(), pid);
     }
 }
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `alimentazione`.
  */
-void createAlimentazione(){
+void createAlimentazione() {
     pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0) { // Processo non creato
@@ -88,7 +88,7 @@ void createAlimentazione(){
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
-        printf("Master: Creazione di un alimentatore con PID: %d\n", pid);
+        printf("Master (PID: %d): Creazione di un alimentatore con PID: %d\n", getpid(), pid);
     }
 }
 
@@ -98,18 +98,18 @@ void createAlimentazione(){
 void readparameters(FILE *file) {
     if (file == NULL) { // Verifica che il file sia stato aperto correttamente
         perror("Errore nell'apertura del file di configurazione");
-        exit(EXIT_FAILURE);//Sono Costanti definite in stdlib.h e indicano rispettivamente il successo e il fallimento di un programma
+        exit(EXIT_FAILURE); // Sono Costanti definite in stdlib.h e indicano rispettivamente il successo e il fallimento di un programma
     }
 
-    char line[256]; // Buffer per leggere ogni linea del file viene messo a 128 perchè non si sa la lunghezza delle righe del file
+    char line[256]; // Buffer per leggere ogni linea del file
     while (fgets(line, sizeof(line), file)) { // Legge il file riga per riga
-        line[strcspn(line, "\r\n")] = 0; // Rimuove il carattere di newline perche fgets legge anche il newline \r e \n e li mette in line quindi vanno rimossi perche uguale
-        
+        line[strcspn(line, "\r\n")] = 0; // Rimuove il carattere di newline
+
         char key[128];
         int value;
 
         // Parsea la linea in formato chiave=valore
-        if (sscanf(line, "%127[^=]=%d", key, &value) == 2) {//perche usa 127 e non 128 ? perche l'ultimo carattere è per il terminatore di stringa \0 
+        if (sscanf(line, "%127[^=]=%d", key, &value) == 2) { // Parsea la linea nel formato chiave=valore
             // Assegna il valore alla variabile corrispondente
             if (strcmp(key, "N_ATOMI_INIT") == 0) {
                 *N_ATOMI_INIT = value;
@@ -139,36 +139,26 @@ void readparameters(FILE *file) {
 }
 
 int main() {
+    printf("Master (PID: %d): Inizio esecuzione\n", getpid());
+
     // Creare e mappare la memoria condivisa
-    const char *shm_name = "/shared_mem";
+    const char *shm_name = "/Parametres";
     const size_t shm_size = 8 * sizeof(int); // 8 interi
 
     // Crea o apre una memoria condivisa
-    //A file descriptor (fd) identifies a source/destination of a sequence of bytes File descriptors are of type int
-    //shm_fd serve per identificare la memoria condivisa ("Detto facile")
-    //sgm_name é il nome della memoria condivisa
-    //O_CREAT indica che se la memoria condivisa non esiste, deve essere creata
-    //O_RDWR indica che la memoria condivisa è sia leggibile che scrivibile
-    //0666 indica che la memoria condivisa è accessibile a tutti gli utenti 
     int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1) {
         perror("Errore nella shm_open");
         exit(EXIT_FAILURE);
     }
 
-    // Imposta la dimensione della memoria condivisa 
-    //le funzioni che iniziano con f sono funzione stream e sono di tipo  " *FILE 
-    if (ftruncate(shm_fd, shm_size) == -1) {//ftruncate serve per impostare la dimensione della memoria condivisa
+    // Imposta la dimensione della memoria condivisa
+    if (ftruncate(shm_fd, shm_size) == -1) {
         perror("Errore nella ftruncate");
         exit(EXIT_FAILURE);
     }
 
-    // Mappa la memoria condivisa nel proprio spazio degli indirizzi che serve per accedere alla memoria condivisa
-    //shm_size è la dimensione della memoria condivisa
-    //PROT vul dire protezione 
-    //PROT_READ | PROT_WRITE indica che la memoria condivisa è sia leggibile che scrivibile
-    //MAP_SHARED indica che la memoria condivisa è condivisa tra più processi
-    //shm_fd è il file descriptor della memoria condivisa che serve per identificarla 
+    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
     void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (shm_ptr == MAP_FAILED) {
         perror("Errore nella mmap");
@@ -176,7 +166,6 @@ int main() {
     }
 
     // Puntatori alle variabili nella memoria condivisa
-    //DA 0 a 7 * sizeof(int) ci sono 8 interi
     N_ATOMI_INIT = (int *)shm_ptr;
     N_ATOM_MAX = (int *)(shm_ptr + sizeof(int));
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
@@ -185,6 +174,8 @@ int main() {
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     SIM_DURATION = (int *)(shm_ptr + 6 * sizeof(int));
     ENERGY_EXPLODE_THRESHOLD = (int *)(shm_ptr + 7 * sizeof(int));
+
+    printf("Master (PID: %d): Parametri inizializzati. Inizio lettura del file di configurazione\n", getpid());
 
     // Apri il file di configurazione e leggi i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
@@ -196,27 +187,29 @@ int main() {
     }
 
     // Stampa informazioni di inizio simulazione
-    printf("Master: Inizio simulazione ho pid %d\n", getpid());
-    printf("Master: Parametri letti dal file di configurazione:\n");
+    printf("Master (PID: %d): Parametri letti dal file di configurazione\n", getpid());
 
-    // Creazione dei processi necessari
-    printf("Master:Creazione del processo alimentatore\n");
-    createAlimentazione();
-
-    printf("Master:Creazione del processo attivatore\n");
-    createAttivatore();
-
-    printf("Master: Inizio creazione atomi iniziali\n");
+    printf("Master (PID: %d): Inizio creazione atomi iniziali\n", getpid());
     for (int i = 0; i < *N_ATOMI_INIT; i++) {
         createAtomo();
     }
-    printf("Master: Fine creazione atomi iniziali\n");
+    printf("Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
+
+    // Creazione dei processi necessari
+    printf("Master (PID: %d): Creazione del processo alimentatore\n", getpid());
+    createAlimentazione();
+
+    printf("Master (PID: %d): Creazione del processo attivatore\n", getpid());
+    createAttivatore();
+
+    // Avvia la simulazione
+    printf("Master (PID: %d): Inizio simulazione\n", getpid());
 
     // Attende la terminazione di tutti i figli
-    while(wait(NULL) != -1); 
+    while (wait(NULL) != -1);
 
     // Pulizia della memoria condivisa
-    shm_unlink(shm_name);// alla chiusur del processo la memoria condivisa viene rimossa
+    shm_unlink(shm_name);
 
     exit(EXIT_SUCCESS);
 }
