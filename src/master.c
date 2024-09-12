@@ -9,14 +9,14 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include "lib.h"
-#define MSGSZ 128
+
 
 // Definizione della struttura del messaggio
-typedef struct msgbuf {
-    long mtype;
-    char mtext[MSGSZ];
-} message_buf;
 
+typedef struct {
+    int n_atom;
+    pid_t pid;
+ } atom;
 // Definizione delle variabili come puntatori che punteranno a memoria condivisa
 int *N_ATOMI_INIT;
 int *N_ATOM_MAX; // Numero massimo di atomi
@@ -52,6 +52,7 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
+        
         printf("[INFO] Master (PID: %d): Processo atomo creato con PID: %d e numero atomico: %d\n", getpid(), pid, numero_atomico);
     }
 }
@@ -203,18 +204,25 @@ int main() {
         printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
     }
     printf("[INFO] Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
-
     // Creazione dei processi necessari
     printf("[INFO] Master (PID: %d): Creazione del processo alimentatore\n", getpid());
     createAlimentazione();
-
+     if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
+            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
+            exit(1);
+        }
+        printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
     printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
     createAttivatore();
-
-  
-
+ if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
+            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
+            exit(1);
+        }
+        printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
     // Avvio della simulazione principale
     printf("[INFO] Master (PID: %d): Inizio simulazione principale\n", getpid());
+    //deve inviare a tutti i processi il messaggio di inizio simulazione
+    
 
     // Attende la terminazione di tutti i processi figli
     while (wait(NULL) != -1);

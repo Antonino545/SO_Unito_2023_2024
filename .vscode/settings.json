@@ -2,6 +2,7 @@
   "files.associations": {
     "*.embeddedhtml": "html",
     "cstdlib": "c",
-    "limits": "c"
+    "limits": "c",
+    "lib.h": "c"
   }
 }

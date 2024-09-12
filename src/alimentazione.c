@@ -8,6 +8,7 @@ typedef struct msgbuf {
     char mtext[128];
 } message_buf;
 
+
 int main(int argc, char const *argv[]) {
     printf("[INFO] Alimentazione: Sono stato appena creato\n");
     // Invia un messaggio al master
@@ -26,6 +27,5 @@ int main(int argc, char const *argv[]) {
         perror("msgsnd");
         exit(1);
     }
-
     exit(EXIT_SUCCESS);
 }

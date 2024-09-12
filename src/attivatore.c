@@ -3,16 +3,31 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <unistd.h>
+#include <string.h>
+#include <time.h>
+#include "lib.h"
 
-typedef struct msgbuf {
-    long mtype;
-    char mtext[128];
-} message_buf;
+
+void invia_messaggio_scissione(int msqid, pid_t atomo_pid) {
+    message_buf sbuf;
+    sbuf.mtype = atomo_pid;  // Imposta il mtype al PID dell'atomo destinatario
+
+    // Crea un messaggio di richiesta di scissione
+    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Attivatore (PID: %d): Scissione richiesta", getpid());
+
+    // Invia il messaggio alla coda
+    if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
+        perror("msgsnd");
+        exit(1);
+    }
+
+    printf("[INFO] Attivatore (PID: %d): Messaggio di scissione inviato all'atomo (PID: %d)\n", getpid(), atomo_pid);
+}
 
 int main(int argc, char const *argv[]) {
     printf("[INFO] Attivatore: Sono stato appena creato\n");
 
-    // Invia un messaggio al master
+    // Ottieni l'ID della coda di messaggi
     key_t key = 1234;
     int msqid;
     if ((msqid = msgget(key, 0666)) < 0) {
@@ -28,6 +43,5 @@ int main(int argc, char const *argv[]) {
         perror("msgsnd");
         exit(1);
     }
-
     exit(EXIT_SUCCESS);
 }
