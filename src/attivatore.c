@@ -10,7 +10,7 @@ typedef struct msgbuf {
 } message_buf;
 
 int main(int argc, char const *argv[]) {
-    printf("Attivatore: Sono stato appena creato\n");
+    printf("[INFO] Attivatore: Sono stato appena creato\n");
 
     // Invia un messaggio al master
     key_t key = 1234;
@@ -22,7 +22,7 @@ int main(int argc, char const *argv[]) {
 
     message_buf sbuf;
     sbuf.mtype = 1;
-    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "Attivatore %d: Inizializzazione completata", getpid());
+    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
 
     if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
         perror("msgsnd");

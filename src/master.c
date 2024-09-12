@@ -236,7 +236,8 @@ int main() {
 
     // Attende la terminazione di tutti i figli
     while (wait(NULL) != -1);
-
+    
+    printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
     // Pulizia della memoria condivisa
     shm_unlink(shm_name);
 

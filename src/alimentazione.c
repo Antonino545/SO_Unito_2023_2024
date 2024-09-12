@@ -9,8 +9,7 @@ typedef struct msgbuf {
 } message_buf;
 
 int main(int argc, char const *argv[]) {
-    printf("Alimentazione: Sono stato appena creato\n");
-
+    printf("[INFO] Alimentazione: Sono stato appena creato\n");
     // Invia un messaggio al master
     key_t key = 1234;
     int msqid;
@@ -21,7 +20,7 @@ int main(int argc, char const *argv[]) {
 
     message_buf sbuf;
     sbuf.mtype = 1;
-    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "Alimentazione %d: Inizializzazione completata", getpid());
+    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
 
     if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
         perror("msgsnd");
