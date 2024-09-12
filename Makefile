@@ -11,24 +11,29 @@ all: master atomo alimentazione attivatore
 LDFLAGS = -lrt
 
 # Build master target
-master: src/master.c
+master: build/lib.o src/master.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/master src/master.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/master src/master.c build/lib.o $(LDFLAGS)
 
 # Build atomo target
-atomo: src/atomo.c
+atomo: build/lib.o src/atomo.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/atomo src/atomo.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/atomo src/atomo.c build/lib.o $(LDFLAGS)
 
 # Build alimentazione target
-alimentazione: src/alimentazione.c
+alimentazione: build/lib.o src/alimentazione.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/alimentazione src/alimentazione.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/alimentazione src/alimentazione.c build/lib.o $(LDFLAGS)
 
 # Build attivatore target
-attivatore: src/attivatore.c
+attivatore: build/lib.o src/attivatore.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -o build/attivatore src/attivatore.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o build/attivatore src/attivatore.c build/lib.o $(LDFLAGS)
+
+# Build lib target
+build/lib.o: src/lib.c src/lib.h
+	mkdir -p build
+	$(CC) $(CFLAGS) -c -o build/lib.o src/lib.c
 
 # Clean target
 clean:
@@ -37,6 +42,3 @@ clean:
 # Run target
 run: all
 	cd build && ./master
-
-# Phony targets
-.PHONY: all master atomo alimentazione attivatore clean run

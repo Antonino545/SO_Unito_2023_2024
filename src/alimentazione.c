@@ -13,11 +13,6 @@ int main(int argc, char const *argv[]) {
 
     msg_buffer sbuf;
     sbuf.mtype = 1;
-    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
-
-    if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
-        perror("msgsnd");
-        exit(1);
-    }
-    exit(EXIT_SUCCESS);
+    send_message_to_master( msqid, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
+   exit(EXIT_SUCCESS);
 }

@@ -30,13 +30,6 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }
 
-    msg_buffer sbuf;
-    sbuf.mtype = 1;
-    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
-
-    if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
-        perror("msgsnd");
-        exit(1);
-    }
+    send_message_to_master( msqid, "[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
     exit(EXIT_SUCCESS);
 }

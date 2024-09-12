@@ -28,24 +28,7 @@ int energialiberata(int numero_atomico_padre, int numero_atomico_figlio) {
 
 
 
-/**
- * Funzione che invia un messaggio al processo master.
- * 
- * @param msqid ID della coda di messaggi
- * @param atom_pid PID dell'atomo
- * @param status Stato da inviare al master
- */
-void send_message_to_master(int msqid, int atom_pid, const char *status) {
-    msg_buffer sbuf;
-    sbuf.mtype = 1;  // Tipo di messaggio (lo stesso per tutti i messaggi inviati dall'atomo)
-    snprintf(sbuf.mtext, sizeof(sbuf.mtext), "Atomo %d: %s", atom_pid, status);
 
-    if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
-        perror("Errore msgsnd: impossibile inviare il messaggio");
-        // Si può gestire ulteriormente l'errore qui se necessario
-        exit(1);
-    }
-}
 
 /**
  * Funzione che attende un messaggio di scissione dall'attivatore.
@@ -93,12 +76,12 @@ int main(int argc, char *argv[]) {
     // Verifica se l'atomo deve terminare immediatamente
     if (numero_atomico < *MIN_N_ATOMICO) {
         printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
-        send_message_to_master(msqid, getpid(), "Terminazione con successo");
+        send_message_to_master(msqid,"[INFO] Atomo (PID: %d): Atomo terminato", getpid());
         exit(EXIT_SUCCESS);
     }
 
     // Invia messaggio di "Inizializzazione completata" al master
-    send_message_to_master(msqid, getpid(), "Inizializzazione completata");
+    send_message_to_master(msqid,"[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
 
 
 
