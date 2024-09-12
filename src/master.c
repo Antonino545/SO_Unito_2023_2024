@@ -9,7 +9,6 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include "lib.h"
-
 #define MSGSZ 128
 
 // Definizione della struttura del messaggio
@@ -29,53 +28,26 @@ int *SIM_DURATION;
 int *ENERGY_EXPLODE_THRESHOLD;
 int msqid;
 
-/**
- * Configura la memoria condivisa.
- * @return Puntatore alla memoria condivisa.
- */
-void* setup_shared_memory(const char *shm_name, size_t shm_size) {
-    // Crea o apre una memoria condivisa
-    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("[ERROR] Master: Errore durante la creazione della memoria condivisa (shm_open fallita)");
-        exit(EXIT_FAILURE);
-    }
 
-    // Imposta la dimensione della memoria condivisa
-    if (ftruncate(shm_fd, shm_size) == -1) {
-        perror("[ERROR] Master: Impossibile impostare la dimensione della memoria condivisa (ftruncate fallita)");
-        exit(EXIT_FAILURE);
-    }
-
-    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
-    void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shm_ptr == MAP_FAILED) {
-        perror("[ERROR] Master: Errore durante la mappatura della memoria condivisa (mmap fallita)");
-        exit(EXIT_FAILURE);
-    }
-
-    return shm_ptr;
-}
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
  */
 void createAtomo() {
     pid_t pid = fork(); // Crea un nuovo processo
-    int numero_atomico = generate_random(*N_ATOM_MAX); // Genera un numero atomico casuale tra 1 e N_ATOM_MAX
+    int numero_atomico = generate_random(*N_ATOM_MAX); // Genera un numero atomico casuale
 
-    if (pid < 0) { // Processo non creato
+    if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
         exit(EXIT_FAILURE);
     } else if (pid == 0) { // Processo figlio
         char num_atomico_str[20];
-        
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico); // Converti il numero atomico in stringa
 
         printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
 
         // Esegui `atomo` con il numero atomico come argomento
-        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) { // execlp ritorna -1 se fallisce
+        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
             exit(EXIT_FAILURE);
         }
@@ -90,14 +62,14 @@ void createAtomo() {
 void createAttivatore() {
     pid_t pid = fork(); // Crea un nuovo processo
 
-    if (pid < 0) { // Processo non creato
+    if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un attivatore");
         exit(EXIT_FAILURE);
     } else if (pid == 0) { // Processo figlio
         printf("[INFO] Attivatore (PID: %d): Avvio processo attivatore\n", getpid());
 
         // Esegui `attivatore`
-        if (execlp("./attivatore", "attivatore", NULL) == -1) { // execlp ritorna -1 se fallisce
+        if (execlp("./attivatore", "attivatore", NULL) == -1) {
             perror("[ERROR] Attivatore: execlp fallito durante l'esecuzione del processo attivatore");
             exit(EXIT_FAILURE);
         }
@@ -112,14 +84,14 @@ void createAttivatore() {
 void createAlimentazione() {
     pid_t pid = fork(); // Crea un nuovo processo
 
-    if (pid < 0) { // Processo non creato
+    if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione del processo alimentazione");
         exit(EXIT_FAILURE);
     } else if (pid == 0) { // Processo figlio
         printf("[INFO] Alimentazione (PID: %d): Avvio processo alimentazione\n", getpid());
 
         // Esegui `alimentazione`
-        if (execlp("./alimentazione", "alimentazione", NULL) == -1) { // execlp ritorna -1 se fallisce
+        if (execlp("./alimentazione", "alimentazione", NULL) == -1) {
             perror("[ERROR] Alimentazione: execlp fallito durante l'esecuzione del processo alimentazione");
             exit(EXIT_FAILURE);
         }
@@ -129,7 +101,8 @@ void createAlimentazione() {
 }
 
 /**
- * Funzione per leggere i parametri dal file di configurazione
+ * Legge i parametri dal file di configurazione e li memorizza nella memoria condivisa.
+ * @param file Puntatore al file di configurazione aperto.
  */
 void readparameters(FILE *file) {
     if (file == NULL) { // Verifica che il file sia stato aperto correttamente
@@ -144,8 +117,8 @@ void readparameters(FILE *file) {
         char key[128];
         int value;
 
-        // Parsea la linea in formato chiave=valore
-        if (sscanf(line, "%127[^=]=%d", key, &value) == 2) { // Parsea la linea nel formato chiave=valore
+        // Parsea la linea nel formato chiave=valore
+        if (sscanf(line, "%127[^=]=%d", key, &value) == 2) {
             if (strcmp(key, "N_ATOMI_INIT") == 0) {
                 *N_ATOMI_INIT = value;
                 printf("[DEBUG] Master: N_ATOMI_INIT impostato a %d\n", value);
@@ -182,9 +155,9 @@ int main() {
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
-    const size_t shm_size = 8 * sizeof(int); // 8 interi
+    const size_t shm_size = 8 * sizeof(int); // Dimensione della memoria condivisa (8 interi)
     void *shmParamsPtr = setup_shared_memory(shm_name, shm_size);
-    //shm_ptr che è un puntatore alla memoria condivisa, punterà alla prima posizione di memoria condivisa
+
     // Puntatori alle variabili nella memoria condivisa
     N_ATOMI_INIT = (int *)shmParamsPtr;
     N_ATOM_MAX = (int *)(shmParamsPtr + sizeof(int));
@@ -220,6 +193,15 @@ int main() {
     for (int i = 0; i < *N_ATOMI_INIT; i++) {
         createAtomo();
     }
+      // Ricezione dei messaggi dai processi
+    message_buf rbuf;
+    for (int i = 0; i < *N_ATOMI_INIT ; i++) { // +2 per attivatore e alimentatore
+        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
+            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
+            exit(1);
+        }
+        printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
+    }
     printf("[INFO] Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
 
     // Creazione dei processi necessari
@@ -229,24 +211,16 @@ int main() {
     printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
     createAttivatore();
 
-    // Ricezione dei messaggi dai processi
-    message_buf rbuf;
-    for (int i = 0; i < *N_ATOMI_INIT + 2; i++) { // +2 per attivatore e alimentatore
-        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
-            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
-            exit(1);
-        }
-        printf("[INFO] Master (PID: %d): Messaggio ricevuto: %s\n", getpid(), rbuf.mtext);
-    }
+  
 
-    // Avvia la simulazione
+    // Avvio della simulazione principale
     printf("[INFO] Master (PID: %d): Inizio simulazione principale\n", getpid());
 
-    // Attende la terminazione di tutti i figli
+    // Attende la terminazione di tutti i processi figli
     while (wait(NULL) != -1);
-    
-    printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
+
     // Pulizia della memoria condivisa
+    printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
     shm_unlink(shm_name);
 
     // Rimuove la coda di messaggi
