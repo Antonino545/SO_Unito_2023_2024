@@ -4,7 +4,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <string.h>
-#include <time.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/ipc.h>
@@ -21,7 +20,7 @@ typedef struct msgbuf {
 
 // Definizione delle variabili come puntatori che punteranno a memoria condivisa
 int *N_ATOMI_INIT;
-int *N_ATOM_MAX;
+int *N_ATOM_MAX; // Numero massimo di atomi
 int *MIN_N_ATOMICO;
 int *ENERGY_DEMAND;
 int *STEP;
@@ -29,6 +28,34 @@ int *N_NUOVI_ATOMI;
 int *SIM_DURATION;
 int *ENERGY_EXPLODE_THRESHOLD;
 int msqid;
+
+/**
+ * Configura la memoria condivisa.
+ * @return Puntatore alla memoria condivisa.
+ */
+void* setup_shared_memory(const char *shm_name, size_t shm_size) {
+    // Crea o apre una memoria condivisa
+    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
+    if (shm_fd == -1) {
+        perror("[ERROR] Master: Errore durante la creazione della memoria condivisa (shm_open fallita)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Imposta la dimensione della memoria condivisa
+    if (ftruncate(shm_fd, shm_size) == -1) {
+        perror("[ERROR] Master: Impossibile impostare la dimensione della memoria condivisa (ftruncate fallita)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
+    void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (shm_ptr == MAP_FAILED) {
+        perror("[ERROR] Master: Errore durante la mappatura della memoria condivisa (mmap fallita)");
+        exit(EXIT_FAILURE);
+    }
+
+    return shm_ptr;
+}
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
@@ -153,39 +180,20 @@ void readparameters(FILE *file) {
 int main() {
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale\n", getpid());
 
-    // Creare e mappare la memoria condivisa
+    // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
     const size_t shm_size = 8 * sizeof(int); // 8 interi
-
-    // Crea o apre una memoria condivisa
-    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("[ERROR] Master: Errore durante la creazione della memoria condivisa (shm_open fallita)");
-        exit(EXIT_FAILURE);
-    }
-
-    // Imposta la dimensione della memoria condivisa
-    if (ftruncate(shm_fd, shm_size) == -1) {
-        perror("[ERROR] Master: Impossibile impostare la dimensione della memoria condivisa (ftruncate fallita)");
-        exit(EXIT_FAILURE);
-    }
-
-    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
-    void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shm_ptr == MAP_FAILED) {
-        perror("[ERROR] Master: Errore durante la mappatura della memoria condivisa (mmap fallita)");
-        exit(EXIT_FAILURE);
-    }
-
+    void *shmParamsPtr = setup_shared_memory(shm_name, shm_size);
+    //shm_ptr che è un puntatore alla memoria condivisa, punterà alla prima posizione di memoria condivisa
     // Puntatori alle variabili nella memoria condivisa
-    N_ATOMI_INIT = (int *)shm_ptr;
-    N_ATOM_MAX = (int *)(shm_ptr + sizeof(int));
-    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
-    ENERGY_DEMAND = (int *)(shm_ptr + 3 * sizeof(int));
-    STEP = (int *)(shm_ptr + 4 * sizeof(int));
-    N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
-    SIM_DURATION = (int *)(shm_ptr + 6 * sizeof(int));
-    ENERGY_EXPLODE_THRESHOLD = (int *)(shm_ptr + 7 * sizeof(int));
+    N_ATOMI_INIT = (int *)shmParamsPtr;
+    N_ATOM_MAX = (int *)(shmParamsPtr + sizeof(int));
+    MIN_N_ATOMICO = (int *)(shmParamsPtr + 2 * sizeof(int));
+    ENERGY_DEMAND = (int *)(shmParamsPtr + 3 * sizeof(int));
+    STEP = (int *)(shmParamsPtr + 4 * sizeof(int));
+    N_NUOVI_ATOMI = (int *)(shmParamsPtr + 5 * sizeof(int));
+    SIM_DURATION = (int *)(shmParamsPtr + 6 * sizeof(int));
+    ENERGY_EXPLODE_THRESHOLD = (int *)(shmParamsPtr + 7 * sizeof(int));
 
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 

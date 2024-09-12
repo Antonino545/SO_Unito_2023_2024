@@ -1,4 +1,6 @@
-
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
 /**
  * Genera un numero casuale tra 1 e `max`. 
  * @param max Il valore massimo che può essere generato.
