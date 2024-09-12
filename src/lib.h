@@ -16,7 +16,7 @@
 
 #define INIT_MSG 1
 #define MSGSZ 128
-
+#define MESSAGE_QUEUE_KEY 1234
 typedef struct {
     long mtype;
     char mtext[MSGSZ];

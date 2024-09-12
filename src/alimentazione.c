@@ -4,7 +4,7 @@
 int main(int argc, char const *argv[]) {
     printf("[INFO] Alimentazione: Sono stato appena creato\n");
     // Invia un messaggio al master
-    key_t key = 1234;
+    key_t key = MESSAGE_QUEUE_KEY;
     int msqid;
     if ((msqid = msgget(key, 0666)) < 0) {
         perror("msgget");

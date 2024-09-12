@@ -1,13 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
+
 #include "lib.h"
 
 
@@ -82,6 +73,7 @@ void createAttivatore() {
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `alimentazione`.
+ * 
  */
 void createAlimentazione() {
     pid_t pid = fork(); // Crea un nuovo processo
@@ -185,7 +177,7 @@ int main() {
     printf("[INFO] Master (PID: %d): Parametri letti dal file di configurazione. Avvio simulazione\n", getpid());
 
     // Creazione della coda di messaggi
-    key_t key = 1234;
+    key_t key = MESSAGE_QUEUE_KEY;
     if ((msqid = msgget(key, IPC_CREAT | 0666)) < 0) {
         perror("[ERROR] Master: Errore durante la creazione della coda di messaggi (msgget fallita)");
         exit(1);

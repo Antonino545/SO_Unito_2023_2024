@@ -23,7 +23,7 @@ int main(int argc, char const *argv[]) {
     printf("[INFO] Attivatore (PID: %d): Sono stato appena creato\n", getpid());
 
     // Ottieni l'ID della coda di messaggi
-    key_t key = 1234;
+    key_t key = MESSAGE_QUEUE_KEY;
     int msqid;
     if ((msqid = msgget(key, 0666)) < 0) {
         perror("msgget");
