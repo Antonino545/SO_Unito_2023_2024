@@ -17,6 +17,7 @@ typedef struct {
     int n_atom;
     pid_t pid;
  } atom;
+
 // Definizione delle variabili come puntatori che punteranno a memoria condivisa
 int *N_ATOMI_INIT;
 int *N_ATOM_MAX; // Numero massimo di atomi
@@ -157,7 +158,7 @@ int main() {
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
     const size_t shm_size = 8 * sizeof(int); // Dimensione della memoria condivisa (8 interi)
-    void *shmParamsPtr = setup_shared_memory(shm_name, shm_size);
+    void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
 
     // Puntatori alle variabili nella memoria condivisa
     N_ATOMI_INIT = (int *)shmParamsPtr;
@@ -195,7 +196,7 @@ int main() {
         createAtomo();
     }
       // Ricezione dei messaggi dai processi
-    message_buf rbuf;
+    msg_buffer rbuf;
     for (int i = 0; i < *N_ATOMI_INIT ; i++) { // +2 per attivatore e alimentatore
         if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
             perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
@@ -220,7 +221,7 @@ int main() {
         }
         printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
     // Avvio della simulazione principale
-    printf("[INFO] Master (PID: %d): Inizio simulazione principale\n", getpid());
+    printf("[INFO] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     //deve inviare a tutti i processi il messaggio di inizio simulazione
     
 
@@ -229,8 +230,11 @@ int main() {
 
     // Pulizia della memoria condivisa
     printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
-    shm_unlink(shm_name);
-
+    if (shm_unlink(shm_name) == -1) {
+    perror("Errore durante shm_unlink");
+    exit(EXIT_FAILURE);
+    }else printf("[INFO] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
+    
     // Rimuove la coda di messaggi
     if (msgctl(msqid, IPC_RMID, NULL) < 0) {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi (msgctl fallita)");
@@ -238,6 +242,6 @@ int main() {
     }
 
     printf("[INFO] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
-
+    
     exit(EXIT_SUCCESS);
 }

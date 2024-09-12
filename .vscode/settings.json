@@ -3,6 +3,7 @@
     "*.embeddedhtml": "html",
     "cstdlib": "c",
     "limits": "c",
-    "lib.h": "c"
+    "lib.h": "c",
+    "fcntl.h": "c"
   }
 }

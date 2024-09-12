@@ -1,14 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <string.h>
-#include <time.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>  // Include questo header per msgget e msgsnd
+
 #include "lib.h"
 
 int numero_atomico = 0;
@@ -36,28 +26,7 @@ int energialiberata(int numero_atomico_padre, int numero_atomico_figlio) {
     return 0; // Sostituisci con la logica corretta
 }
 
-/**
- * Funzione che imposta la memoria condivisa per i parametri.
- * Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa.
- */
-void setup_ParametresMemory() {
-    const char *shm_name = "/Parametres";
-    const size_t shm_size = 8 * sizeof(int); // 8 interi
 
-    int shm_fd = shm_open(shm_name, O_RDWR, 0666); // Apre la memoria condivisa in lettura e scrittura che è già stata creata
-    if (shm_fd == -1) {
-        perror("Errore nella shm_open");
-        exit(EXIT_FAILURE);
-    }
-
-    void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shm_ptr == MAP_FAILED) {
-        perror("Errore nella mmap");
-        exit(EXIT_FAILURE);
-    }
-
-    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
-}
 
 /**
  * Funzione che invia un messaggio al processo master.
@@ -67,7 +36,7 @@ void setup_ParametresMemory() {
  * @param status Stato da inviare al master
  */
 void send_message_to_master(int msqid, int atom_pid, const char *status) {
-    message_buf sbuf;
+    msg_buffer sbuf;
     sbuf.mtype = 1;  // Tipo di messaggio (lo stesso per tutti i messaggi inviati dall'atomo)
     snprintf(sbuf.mtext, sizeof(sbuf.mtext), "Atomo %d: %s", atom_pid, status);
 
@@ -84,7 +53,7 @@ void send_message_to_master(int msqid, int atom_pid, const char *status) {
  * @param msqid ID della coda di messaggi
  */
 void wait_for_scission_message(int msqid) {
-    message_buf rbuf;
+    msg_buffer rbuf;
     ssize_t msg_length;
     
     // Attende un messaggio dalla coda di messaggi
@@ -107,7 +76,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    setup_ParametresMemory(); // Setup della memoria condivisa
+    void* shm_ptr= allocateParametresMemory(); // Inizializza la memoria condivisa
+    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
 
     numero_atomico = atoi(argv[1]);
     printf("[INFO] Atomo (PID: %d): Sono stato appena creato con numero atomico %d\n", getpid(), numero_atomico);

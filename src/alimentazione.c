@@ -1,12 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <unistd.h>
-typedef struct msgbuf {
-    long mtype;
-    char mtext[128];
-} message_buf;
+#include "lib.h"
 
 
 int main(int argc, char const *argv[]) {
@@ -19,7 +11,7 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }
 
-    message_buf sbuf;
+    msg_buffer sbuf;
     sbuf.mtype = 1;
     snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
 
