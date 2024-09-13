@@ -4,6 +4,7 @@
     "cstdlib": "c",
     "limits": "c",
     "lib.h": "c",
-    "fcntl.h": "c"
+    "fcntl.h": "c",
+    "stdio.h": "c"
   }
 }

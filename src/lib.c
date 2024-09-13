@@ -1,8 +1,8 @@
 #include "lib.h"
 
 int generate_random(int max) {
-    srand(time(NULL) ^ getpid()); // serve per generare numeri casuali diversi per ogni processo se lanciato in contemporanea
-    return rand() % max + 1;
+    srand(time(NULL) * getpid());
+    return rand() % max + 1; // Restituisce un numero tra 1 e max
 }
 
 void* create_shared_memory(const char *shm_name, size_t shm_size) {
@@ -60,5 +60,15 @@ void send_message_to_master(int msqid, const char *format, ...) {
     if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
         perror("Errore msgsnd: impossibile inviare il messaggio");
         exit(EXIT_FAILURE);
+    }
+}
+void waitForNInitMsg(int msqid, int n) {
+    msg_buffer rbuf;
+    for (int i = 0; i < n; i++) {
+        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), INIT_MSG, 0) < 0) {
+            perror("Errore msgrcv: impossibile ricevere il messaggio");
+            exit(EXIT_FAILURE);
+        }
+        printf("[MESSRIC] %s\n", rbuf.mtext); 
     }
 }

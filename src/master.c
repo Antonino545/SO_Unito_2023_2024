@@ -45,9 +45,8 @@ void createAtomo() {
         }
     } else { // Processo padre
         
-        printf("[INFO] Master (PID: %d): Processo atomo creato con PID: %d e numero atomico: %d\n", getpid(), pid, numero_atomico);
-    }
-}
+        printf("[INFO] Master (PID: %d): Processo atomo creato con PID: %d\n", getpid(), pid);
+}}
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `attivatore`.
@@ -174,7 +173,7 @@ int main() {
     }
 
     // Stampa informazioni di inizio simulazione
-    printf("[INFO] Master (PID: %d): Parametri letti dal file di configurazione. Avvio simulazione\n", getpid());
+    printf("[INFO] Master (PID: %d): Parametri letti dal file di configurazione. Inizio creazione Proccessi iniziali\n", getpid());
 
     // Creazione della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
@@ -188,30 +187,16 @@ int main() {
         createAtomo();
     }
       // Ricezione dei messaggi dai processi
-    msg_buffer rbuf;
-    for (int i = 0; i < *N_ATOMI_INIT ; i++) { // +2 per attivatore e alimentatore
-        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
-            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
-            exit(1);
-        }
-        printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
-    }
+    waitForNInitMsg(msqid,*N_ATOMI_INIT);
+
     printf("[INFO] Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
     // Creazione dei processi necessari
     printf("[INFO] Master (PID: %d): Creazione del processo alimentatore\n", getpid());
     createAlimentazione();
-     if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
-            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
-            exit(1);
-        }
-        printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
+    waitForNInitMsg(msqid,1);
     printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
     createAttivatore();
- if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 1, 0) < 0) {
-            perror("[ERROR] Master: Errore durante la ricezione del messaggio (msgrcv fallita)");
-            exit(1);
-        }
-        printf("[INFO] Master (PID: %d): Mess Ric: %s\n", getpid(), rbuf.mtext);
+    waitForNInitMsg(msqid,1);
     // Avvio della simulazione principale
     printf("[INFO] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     //deve inviare a tutti i processi il messaggio di inizio simulazione

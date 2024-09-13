@@ -6,7 +6,6 @@
 void invia_messaggio_scissione(int msqid, pid_t atomo_pid) {
     msg_buffer sbuf;
     sbuf.mtype = atomo_pid;  // Imposta il mtype al PID dell'atomo destinatario
-
     // Crea un messaggio di richiesta di scissione
     snprintf(sbuf.mtext, sizeof(sbuf.mtext), "[INFO] Attivatore (PID: %d): Scissione richiesta", getpid());
 

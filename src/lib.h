@@ -1,6 +1,5 @@
 #ifndef LIB_H
 #define LIB_H
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -52,5 +51,13 @@ void* allocateParametresMemory();
  * @param ... Argomenti variabili per il formato
  */
 void send_message_to_master(int msqid, const char *format, ...);
+
+/**
+ * Funzione che attende un messaggio di inizializzazione da un processo.
+ * 
+ * @param msqid ID della coda di messaggi
+ */
+void waitForNInitMsg(int msqid, int n) ;
+
 
 #endif // LIB_H
