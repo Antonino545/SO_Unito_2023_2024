@@ -97,12 +97,12 @@ int main(int argc, char *argv[]) {
     // Verifica se l'atomo deve terminare immediatamente
     if (numero_atomico < *MIN_N_ATOMICO) {
         printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
-        send_message_to_master(msqid,"[INFO] Atomo (PID: %d): Atomo terminato", getpid());
+        send_message_to_master(msqid,INIT_MSG,"[INFO] Atomo (PID: %d): Atomo terminato", getpid());
         exit(EXIT_SUCCESS);
     }
 
     // Invia messaggio di "Inizializzazione completata" al master
-    send_message_to_master(msqid,"[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
+    send_message_to_master(msqid,INIT_MSG,"[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
 
 
     wait(NULL); // Aspetta che il processo figlio si concluda, se necessario

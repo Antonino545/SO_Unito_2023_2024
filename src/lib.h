@@ -48,9 +48,11 @@ void* allocateParametresMemory();
  *
  * @param msqid ID della coda di messaggi
  * @param format Formato del messaggio (come printf)
+ * @param type Tipo del messaggio
  * @param ... Argomenti variabili per il formato
  */
-void send_message_to_master(int msqid, const char *format, ...);
+void send_message_to_master(int msqid,long type, const char *format, ...);
+
 
 /**
  * Funzione che attende un messaggio di inizializzazione da un processo.

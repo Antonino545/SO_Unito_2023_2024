@@ -13,6 +13,6 @@ int main(int argc, char const *argv[]) {
 
     msg_buffer sbuf;
     sbuf.mtype = 1;
-    send_message_to_master( msqid, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
+    send_message_to_master( msqid,INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
    exit(EXIT_SUCCESS);
 }

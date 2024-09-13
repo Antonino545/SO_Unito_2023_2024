@@ -47,11 +47,11 @@ void* allocateParametresMemory() {
     return shm_ptr;
 }
 
-void send_message_to_master(int msqid, const char *format, ...) {
+void send_message_to_master(int msqid, long type, const char *format, ...) {
     msg_buffer sbuf;
     va_list args;
 
-    sbuf.mtype = INIT_MSG;  // Tipo di messaggio (puoi cambiarlo se necessario)
+    sbuf.mtype = type;  // Tipo di messaggio (puoi cambiarlo se necessario)
     
     va_start(args, format);
     vsnprintf(sbuf.mtext, sizeof(sbuf.mtext), format, args);

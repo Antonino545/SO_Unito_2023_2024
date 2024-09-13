@@ -1,13 +1,11 @@
-
 #include "lib.h"
-
+#include <errno.h>
 
 // Definizione della struttura del messaggio
-
 typedef struct {
     int n_atom;
     pid_t pid;
- } atom;
+} atom;
 
 // Definizione delle variabili come puntatori che punteranno a memoria condivisa
 int *N_ATOMI_INIT;
@@ -18,9 +16,31 @@ int *STEP;
 int *N_NUOVI_ATOMI;
 int *SIM_DURATION;
 int *ENERGY_EXPLODE_THRESHOLD;
+int energy = 0;
 int msqid;
+int cleanup_flag = 0; // Global flag for cleanup
 
+void cleanup() {
+    if (cleanup_flag) {
+        printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
 
+        // Attende la terminazione di tutti i processi figli
+        while (wait(NULL) != -1);
+        const char  *shm_name="/Parametres";
+        // Pulizia della memoria condivisa
+        printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
+        if (shm_unlink(shm_name) == -1) {
+            perror("Errore durante shm_unlink");
+        } else {
+            printf("[INFO] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
+        }
+
+        // Rimuove la coda di messaggi
+        if (msgctl(msqid, IPC_RMID, NULL) < 0) {
+            perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi (msgctl fallita)");
+        }
+    }
+}
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
@@ -31,7 +51,9 @@ void createAtomo() {
 
     if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-        exit(EXIT_FAILURE);
+        cleanup(); // Call cleanup function
+        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione  per meltdown\n", getpid());
+        exit(EXIT_SUCCESS);
     } else if (pid == 0) { // Processo figlio
         char num_atomico_str[20];
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico); // Converti il numero atomico in stringa
@@ -44,9 +66,9 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
-        
         printf("[INFO] Master (PID: %d): Processo atomo creato con PID: %d\n", getpid(), pid);
-}}
+    }
+}
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `attivatore`.
@@ -55,9 +77,11 @@ void createAttivatore() {
     pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0) { // Errore nella creazione del processo
-        perror("[ERROR] Master: Fork fallita durante la creazione di un attivatore");
-        exit(EXIT_FAILURE);
-    } else if (pid == 0) { // Processo figlio
+          perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
+        cleanup(); // Call cleanup function
+        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione  per meltdown\n", getpid());
+        exit(EXIT_SUCCESS);
+        } else if (pid == 0) { // Processo figlio
         printf("[INFO] Attivatore (PID: %d): Avvio processo attivatore\n", getpid());
 
         // Esegui `attivatore`
@@ -72,15 +96,16 @@ void createAttivatore() {
 
 /**
  * Crea un nuovo processo figlio che esegue il programma `alimentazione`.
- * 
  */
 void createAlimentazione() {
     pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0) { // Errore nella creazione del processo
-        perror("[ERROR] Master: Fork fallita durante la creazione del processo alimentazione");
-        exit(EXIT_FAILURE);
-    } else if (pid == 0) { // Processo figlio
+  perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
+        cleanup(); // Call cleanup function
+        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione  per meltdown\n", getpid());
+        exit(EXIT_SUCCESS);
+ } else if (pid == 0) { // Processo figlio
         printf("[INFO] Alimentazione (PID: %d): Avvio processo alimentazione\n", getpid());
 
         // Esegui `alimentazione`
@@ -100,7 +125,7 @@ void createAlimentazione() {
 void readparameters(FILE *file) {
     if (file == NULL) { // Verifica che il file sia stato aperto correttamente
         perror("[ERROR] Master: Impossibile aprire il file di configurazione");
-        exit(EXIT_FAILURE); 
+        exit(EXIT_FAILURE);
     }
 
     char line[256]; // Buffer per leggere ogni linea del file
@@ -143,6 +168,31 @@ void readparameters(FILE *file) {
     fclose(file); // Chiude il file dopo aver letto tutti i parametri
 }
 
+void checkForMeltdownMessage(int msqid) {
+    msg_buffer rbuf;
+    ssize_t result;
+
+    // Attempt to receive a message from the queue
+    result = msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 2, IPC_NOWAIT);
+
+    if (result == -1) {
+        if (errno != ENOMSG) { // Check if the error is not "No message of the desired type"
+            perror("Errore msgrcv: impossibile ricevere il messaggio");
+        }
+        // If errno is ENOMSG, simply return as there are no messages to process
+        return;
+    }
+
+    printf("[TERMINATION] per meltdown: %s\n", rbuf.mtext);
+
+    // Set cleanup flag and perform cleanup
+    cleanup_flag = 1; // Set the flag for cleanup
+    cleanup(); // Call cleanup function
+
+    // Optionally exit if a critical meltdown message is received
+    exit(EXIT_SUCCESS);
+}
+
 int main() {
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale\n", getpid());
 
@@ -179,56 +229,57 @@ int main() {
     key_t key = MESSAGE_QUEUE_KEY;
     if ((msqid = msgget(key, IPC_CREAT | 0666)) < 0) {
         perror("[ERROR] Master: Errore durante la creazione della coda di messaggi (msgget fallita)");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("[INFO] Master (PID: %d): Inizio creazione atomi iniziali\n", getpid());
     for (int i = 0; i < *N_ATOMI_INIT; i++) {
         createAtomo();
     }
-      // Ricezione dei messaggi dai processi
-    waitForNInitMsg(msqid,*N_ATOMI_INIT);
+
+    // Ricezione dei messaggi dai processi
+    waitForNInitMsg(msqid, *N_ATOMI_INIT);
 
     printf("[INFO] Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
     // Creazione dei processi necessari
     printf("[INFO] Master (PID: %d): Creazione del processo alimentatore\n", getpid());
     createAlimentazione();
-    waitForNInitMsg(msqid,1);
+    waitForNInitMsg(msqid, 1);
     printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
     createAttivatore();
-    waitForNInitMsg(msqid,1);
+    waitForNInitMsg(msqid, 1);
+
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
-    //deve inviare a tutti i processi il messaggio di inizio simulazione
-    
+
     while (*SIM_DURATION > 0) {
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
-        
+
+        // Check for meltdown messages
+        checkForMeltdownMessage(msqid);
+
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
-        sleep(1);
-        
-        // Riduci il valore di SIM_DURATION di 1 (se questo è ciò che desideri)
         (*SIM_DURATION)--;
+        sleep(1);
     }
 
-    
     // Attende la terminazione di tutti i processi figli
     while (wait(NULL) != -1);
-    
+
     // Pulizia della memoria condivisa
     printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
     if (shm_unlink(shm_name) == -1) {
-    perror("Errore durante shm_unlink");
-    exit(EXIT_FAILURE);
-    }else printf("[INFO] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
-    
+        perror("Errore durante shm_unlink");
+    } else {
+        printf("[INFO] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
+    }
+
     // Rimuove la coda di messaggi
     if (msgctl(msqid, IPC_RMID, NULL) < 0) {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi (msgctl fallita)");
-        exit(1);
     }
 
-    printf("[IMPORTANT] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
-    
+    printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
+
     exit(EXIT_SUCCESS);
 }

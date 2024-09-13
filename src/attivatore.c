@@ -29,6 +29,6 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }
 
-    send_message_to_master( msqid, "[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
+    send_message_to_master( msqid, INIT_MSG,"[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
     exit(EXIT_SUCCESS);
 }
