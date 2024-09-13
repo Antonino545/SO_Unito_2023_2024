@@ -1,25 +1,46 @@
 #include "lib.h"
 #include <errno.h>
 
-// Definizione della struttura del messaggio
+/**
+ * @file master.c
+ * @brief Programma principale per la simulazione di atomi e processi correlati.
+ * 
+ * Questo programma crea e gestisce processi per simulare atomi, un attivatore e un alimentatore,
+ * utilizzando memoria condivisa e una coda di messaggi per la comunicazione tra processi.
+ * 
+ * Le principali funzionalità del programma includono:
+ * - Configurazione della memoria condivisa.
+ * - Creazione di processi per la simulazione di atomi, attivatori e alimentatori.
+ * - Gestione della durata della simulazione.
+ * - Pulizia della memoria condivisa e della coda di messaggi al termine della simulazione o in caso di errore.
+ */
+
+/**
+ * Struttura del messaggio contenente l'informazione dell'atomo.
+ */
 typedef struct {
-    int n_atom;
-    pid_t pid;
+    int n_atom; /**< Numero atomico dell'atomo */
+    pid_t pid; /**< PID del processo creato */
 } atom;
 
-// Definizione delle variabili come puntatori che punteranno a memoria condivisa
-int *N_ATOMI_INIT;
-int *N_ATOM_MAX; // Numero massimo di atomi
-int *MIN_N_ATOMICO;
-int *ENERGY_DEMAND;
-int *STEP;
-int *N_NUOVI_ATOMI;
-int *SIM_DURATION;
-int *ENERGY_EXPLODE_THRESHOLD;
-int energy = 0;
-int msqid;
-int cleanup_flag = 0; // Global flag for cleanup
+/**
+ * Puntatori alle variabili nella memoria condivisa.
+ */
+int *N_ATOMI_INIT; /**< Numero iniziale di atomi */
+int *N_ATOM_MAX; /**< Numero massimo di atomi */
+int *MIN_N_ATOMICO; /**< Numero atomico minimo */
+int *ENERGY_DEMAND; /**< Domanda di energia */
+int *STEP; /**< Passo per la variazione dell'energia */
+int *N_NUOVI_ATOMI; /**< Numero di nuovi atomi */
+int *SIM_DURATION; /**< Durata della simulazione */
+int *ENERGY_EXPLODE_THRESHOLD; /**< Soglia di esplosione dell'energia */
+int energy = 0; /**< Energia corrente */
+int msqid; /**< ID della coda di messaggi */
+int cleanup_flag = 0; /**< Flag globale per la pulizia */
 
+/**
+ * Funzione di pulizia che gestisce la terminazione dei processi e la rimozione delle risorse.
+ */
 void cleanup() {
     if (cleanup_flag) {
         printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
@@ -43,7 +64,7 @@ void cleanup() {
 }
 
 /**
- * Crea un nuovo processo figlio che esegue il programma `atomo` con un numero atomico casuale come argomento.
+ * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
  */
 void createAtomo() {
     pid_t pid = fork(); // Crea un nuovo processo
@@ -51,16 +72,16 @@ void createAtomo() {
 
     if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-        cleanup(); // Call cleanup function
-        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione  per meltdown\n", getpid());
+        cleanup(); // Chiama la funzione di pulizia
+        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione per meltdown\n", getpid());
         exit(EXIT_SUCCESS);
     } else if (pid == 0) { // Processo figlio
         char num_atomico_str[20];
-        snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico); // Converti il numero atomico in stringa
+        snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico); // Converte il numero atomico in stringa
 
         printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
 
-        // Esegui `atomo` con il numero atomico come argomento
+        // Esegue `atomo` con il numero atomico come argomento
         if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
             exit(EXIT_FAILURE);
@@ -71,20 +92,20 @@ void createAtomo() {
 }
 
 /**
- * Crea un nuovo processo figlio che esegue il programma `attivatore`.
+ * Crea un nuovo processo figlio per eseguire il programma `attivatore`.
  */
 void createAttivatore() {
     pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0) { // Errore nella creazione del processo
-          perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-        cleanup(); // Call cleanup function
-        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione  per meltdown\n", getpid());
+        perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
+        cleanup(); // Chiama la funzione di pulizia
+        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione per meltdown\n", getpid());
         exit(EXIT_SUCCESS);
-        } else if (pid == 0) { // Processo figlio
+    } else if (pid == 0) { // Processo figlio
         printf("[INFO] Attivatore (PID: %d): Avvio processo attivatore\n", getpid());
 
-        // Esegui `attivatore`
+        // Esegue `attivatore`
         if (execlp("./attivatore", "attivatore", NULL) == -1) {
             perror("[ERROR] Attivatore: execlp fallito durante l'esecuzione del processo attivatore");
             exit(EXIT_FAILURE);
@@ -95,20 +116,20 @@ void createAttivatore() {
 }
 
 /**
- * Crea un nuovo processo figlio che esegue il programma `alimentazione`.
+ * Crea un nuovo processo figlio per eseguire il programma `alimentazione`.
  */
 void createAlimentazione() {
     pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0) { // Errore nella creazione del processo
-  perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-        cleanup(); // Call cleanup function
-        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione  per meltdown\n", getpid());
+        perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
+        cleanup(); // Chiama la funzione di pulizia
+        printf("[TERMINATION] Master (PID: %d): Terminazione della simulazione per meltdown\n", getpid());
         exit(EXIT_SUCCESS);
- } else if (pid == 0) { // Processo figlio
+    } else if (pid == 0) { // Processo figlio
         printf("[INFO] Alimentazione (PID: %d): Avvio processo alimentazione\n", getpid());
 
-        // Esegui `alimentazione`
+        // Esegue `alimentazione`
         if (execlp("./alimentazione", "alimentazione", NULL) == -1) {
             perror("[ERROR] Alimentazione: execlp fallito durante l'esecuzione del processo alimentazione");
             exit(EXIT_FAILURE);
@@ -168,31 +189,43 @@ void readparameters(FILE *file) {
     fclose(file); // Chiude il file dopo aver letto tutti i parametri
 }
 
+/**
+ * Controlla se ci sono messaggi di tipo 2 [meltdown] nella coda di messaggi e gestisce la pulizia in caso affermativo.
+ * @param msqid ID della coda di messaggi.
+ */
 void checkForMeltdownMessage(int msqid) {
     msg_buffer rbuf;
     ssize_t result;
 
-    // Attempt to receive a message from the queue
+    // Tenta di ricevere un messaggio dalla coda
     result = msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 2, IPC_NOWAIT);
 
     if (result == -1) {
-        if (errno != ENOMSG) { // Check if the error is not "No message of the desired type"
+        if (errno != ENOMSG) { // Controlla se l'errore non è "Nessun messaggio del tipo desiderato"
             perror("Errore msgrcv: impossibile ricevere il messaggio");
         }
-        // If errno is ENOMSG, simply return as there are no messages to process
+        // Se errno è ENOMSG, ritorna semplicemente poiché non ci sono messaggi da elaborare
         return;
     }
 
     printf("[TERMINATION] per meltdown: %s\n", rbuf.mtext);
 
-    // Set cleanup flag and perform cleanup
-    cleanup_flag = 1; // Set the flag for cleanup
-    cleanup(); // Call cleanup function
+    // Imposta il flag di pulizia e esegue la pulizia
+    cleanup_flag = 1; // Imposta il flag per la pulizia
+    cleanup(); // Chiama la funzione di pulizia
 
-    // Optionally exit if a critical meltdown message is received
+    // Opzionalmente esci se viene ricevuto un messaggio critico di meltdown
     exit(EXIT_SUCCESS);
 }
 
+/**
+ * Funzione principale del programma.
+ * - Configura e mappa la memoria condivisa.
+ * - Legge i parametri dal file di configurazione.
+ * - Crea processi per la simulazione e gestisce la loro esecuzione.
+ * - Gestisce la durata della simulazione e la pulizia finale.
+ * @return Codice di uscita del programma.
+ */
 int main() {
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale\n", getpid());
 
@@ -254,10 +287,12 @@ int main() {
 
     while (*SIM_DURATION > 0) {
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
-
-        // Check for meltdown messages
-        checkForMeltdownMessage(msqid);
-
+       /* if(energy<*ENERGY_DEMAND){
+            printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
+            printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
+            printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
+            break;
+        }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
         (*SIM_DURATION)--;
         sleep(1);
