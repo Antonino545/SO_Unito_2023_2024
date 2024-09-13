@@ -198,13 +198,23 @@ int main() {
     createAttivatore();
     waitForNInitMsg(msqid,1);
     // Avvio della simulazione principale
-    printf("[INFO] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
+    printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     //deve inviare a tutti i processi il messaggio di inizio simulazione
     
+    while (*SIM_DURATION > 0) {
+        printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
+        
+        // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
+        sleep(1);
+        
+        // Riduci il valore di SIM_DURATION di 1 (se questo è ciò che desideri)
+        (*SIM_DURATION)--;
+    }
 
+    
     // Attende la terminazione di tutti i processi figli
     while (wait(NULL) != -1);
-
+    
     // Pulizia della memoria condivisa
     printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
     if (shm_unlink(shm_name) == -1) {
@@ -218,7 +228,7 @@ int main() {
         exit(1);
     }
 
-    printf("[INFO] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
+    printf("[IMPORTANT] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
     
     exit(EXIT_SUCCESS);
 }
