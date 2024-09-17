@@ -12,6 +12,7 @@
 #include <sys/msg.h>
 #include <time.h>
 #include <stdarg.h>
+#include  <signal.h>
 
 #define INIT_MSG 1
 #define MESS_SIZE 128

@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wvla -Wextra -Werror
+CFLAGS = -std=c99 -D_GNU_SOURCE -Wvla -Wextra -Werror
 
 # Default target
 all: master atomo alimentazione attivatore
