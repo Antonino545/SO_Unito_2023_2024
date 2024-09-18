@@ -16,15 +16,6 @@
  */
 
 /**
- * Struttura del messaggio contenente l'informazione dell'atomo.
- */
-typedef struct {
-    int n_atom; /**< Numero atomico dell'atomo */
-    pid_t pid; /**< PID del processo creato */
-} atom;
-
-
-/**
  * Puntatori alle variabili nella memoria condivisa.
  */
 int *N_ATOMI_INIT; /**< Numero iniziale di atomi */
@@ -37,24 +28,22 @@ int *SIM_DURATION; /**< Durata della simulazione */
 int *ENERGY_EXPLODE_THRESHOLD; /**< Soglia di esplosione dell'energia */
 int energy = 0; /**< Energia corrente */
 int msqid; /**< ID della coda di messaggi */
-int cleanup_flag = 0; /**< Flag globale per la pulizia */
 int *PID_MANSTER; /**< PID del processo master */
 /**
  * Funzione di pulizia che gestisce la terminazione dei processi e la rimozione delle risorse.
  */
 void cleanup() {
-    
         printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
 
         // Attende la terminazione di tutti i processi figli
         while (wait(NULL) != -1);
         const char  *shm_name="/Parametres";
         // Pulizia della memoria condivisa
-        printf("[INFO] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
+        printf("[CLEANUP] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
         if (shm_unlink(shm_name) == -1) {
-            perror("Errore durante shm_unlink");
+            perror("[ERROR] Master: Errore durante la pulizia della memoria condivisa (shm_unlink fallita)");
         } else {
-            printf("[INFO] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
+            printf("[CLEANUP] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
         }
 
         // Rimuove la coda di messaggi
@@ -68,24 +57,19 @@ void cleanup() {
  * Questa funzione viene lanciata quando il processo riceve un segnale di meltdown.
  */
 void handle_meltdown(int sig) {
-     cleanup();
-
-    printf("[ERROR] Master (PID: %d): Segnale di meltdown ricevuto. Terminazione della simulazione\n", getpid());
-    exit(EXIT_FAILURE);
+    cleanup();
+    printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di un meltdown. Chiusura programma.\n", getpid());
+    exit(EXIT_SUCCESS);
 }
 /**
  * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
  */
 void setup_signal_handler() {
     struct sigaction sa;// Struttura per la gestione dei segnali
+    bzero (& sa , sizeof ( sa ) ) ;
     sa.sa_handler = handle_meltdown;// Imposta la funzione di gestione del segnale;
     sigemptyset(&sa.sa_mask);  // Inizializza il set dei segnali bloccati durante l'esecuzione della funzione di gestione
-    sa.sa_flags = 0;// Nessuna flag aggiuntiva
-    if (sigaction(SIGUSR1, &sa, NULL) == -1) {// Imposta la gestione del segnale SIGUSR1
-        perror("[ERROR] Master: Errore nella gestione del segnale");
-        cleanup();
-        exit(EXIT_FAILURE);
-    }
+    sigaction(SIGUSR1, &sa, NULL);// Imposta la gestione del segnale SIGUSR1
 } 
 
 
@@ -171,7 +155,8 @@ void readparameters(FILE *file) {
         perror("[ERROR] Master: Impossibile aprire il file di configurazione");
         exit(EXIT_FAILURE);
     }
-
+    *PID_MANSTER=getpid();
+    printf("[DEBUG] Master: PID impostato a %d\n", getpid());
     char line[256]; // Buffer per leggere ogni linea del file
     while (fgets(line, sizeof(line), file)) { // Legge il file riga per riga
         line[strcspn(line, "\r\n")] = 0; // Rimuove il carattere di newline
@@ -206,8 +191,7 @@ void readparameters(FILE *file) {
                 *ENERGY_EXPLODE_THRESHOLD = value;
                 printf("[DEBUG] Master: ENERGY_EXPLODE_THRESHOLD impostato a %d\n", value);
             }
-            *PID_MANSTER=getpid();
-            printf("[DEBUG] Master: PID impostato a %d\n", getpid());
+            
         }
     }
 
@@ -231,7 +215,7 @@ int main() {
     void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
 
     // Puntatori alle variabili nella memoria condivisa
-    N_ATOMI_INIT = (int *)shmParamsPtr;
+    N_ATOMI_INIT = (int *)shmParamsPtr; 
     N_ATOM_MAX = (int *)(shmParamsPtr + sizeof(int));
     MIN_N_ATOMICO = (int *)(shmParamsPtr + 2 * sizeof(int));
     ENERGY_DEMAND = (int *)(shmParamsPtr + 3 * sizeof(int));
@@ -246,6 +230,7 @@ int main() {
     FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL) {
         perror("[ERROR] Master: Impossibile aprire il file di configurazione");
+        cleanup();
         exit(EXIT_FAILURE);
     } else {
         readparameters(file);
@@ -295,14 +280,12 @@ int main() {
         }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
         (*SIM_DURATION)--;
-        sleep(1);
+        struct timespec my_time ;
+        my_time.tv_sec = 1;
+        my_time.tv_nsec = 0;
+        nanosleep(&my_time, NULL);//Uso nanosleep per aspettare un secondo invece di sleep per evitare che il processo venga interrotto da un segnale
     }
-
-    cleanup_flag = 1; // Imposta il flag per la pulizia
     cleanup();
-
-
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
-
     exit(EXIT_SUCCESS);
 }

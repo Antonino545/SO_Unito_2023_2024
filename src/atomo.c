@@ -3,7 +3,7 @@
 
 int numero_atomico = 0;
 int *MIN_N_ATOMICO;
-
+int *PID_MANSTER;
 
 /**
  * Funzione che gestisce la divisione dell'atomo.
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 
     void* shm_ptr= allocateParametresMemory(); // Inizializza la memoria condivisa
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
-
+    PID_MANSTER = (int *)(shm_ptr + 8 * sizeof(int)); // Recupera il PID del processo master dalla memoria condivisa
     numero_atomico = atoi(argv[1]);
     printf("[INFO] Atomo (PID: %d): Sono stato appena creato con numero atomico %d\n", getpid(), numero_atomico);
 

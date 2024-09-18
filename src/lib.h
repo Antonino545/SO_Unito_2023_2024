@@ -17,11 +17,22 @@
 #define INIT_MSG 1
 #define MESS_SIZE 128
 #define MESSAGE_QUEUE_KEY 1234
+/*
+    * Struttura del messaggio.
+    
+*/
 typedef struct {
     long mtype;
     char mtext[MESS_SIZE];
 } msg_buffer;
 
+/**
+ * Struttura del messaggio contenente l'informazione dell'atomo.
+ */
+typedef struct {
+    int n_atom; /**< Numero atomico dell'atomo */
+    pid_t pid; /**< PID del processo creato */
+} atom;
 /**
  * Genera un numero casuale tra 1 e `max`. 
  * @param max Il valore massimo che può essere generato.
