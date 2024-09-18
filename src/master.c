@@ -35,6 +35,9 @@ void initStats() {
     memset(statistiche, 0, sizeof(Statistiche));// Inizializza tutte le variabili di statistiche a 0 
 
 }
+/**
+ * Stampa le statistiche della simulazione.
+ */
 void printStats(){
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
     printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), statistiche->Nattivazioni.totale);
