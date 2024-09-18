@@ -4,7 +4,7 @@
 /**
  * @file master.c
  * @brief Programma principale per la simulazione di atomi e processi correlati.
- * 
+ * @author Antonino Incorvaia e Desirée Gaudio
  * Questo programma crea e gestisce processi per simulare atomi, un attivatore e un alimentatore,
  * utilizzando memoria condivisa e una coda di messaggi per la comunicazione tra processi.
  * 
@@ -19,8 +19,37 @@
  * Puntatori alle variabili nella memoria condivisa.
  */
 
-int energy = 0; /**<Energia corrente */
+
+Statistiche *statistiche; // Statistiche della simulazione
 int msqid; /** ID della coda di messaggi */
+ 
+ /**
+  * Funzione che initilizza le statistiche della simulazione.
+  */
+void initStats() {
+    statistiche = malloc(sizeof(*statistiche));
+    if (statistiche == NULL) {
+        perror("Failed to allocate memory for statistiche");
+        exit(EXIT_FAILURE);
+    }
+    memset(statistiche, 0, sizeof(Statistiche));// Inizializza tutte le variabili di statistiche a 0 
+
+}
+void printStats(){
+    printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
+    printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), statistiche->Nattivazioni.totale);
+    printf("[INFO] Master (PID: %d): Attivazioni ultimo secondo: %d\n", getpid(), statistiche->Nattivazioni.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Scissioni totali: %d\n", getpid(), statistiche->Nscissioni.totale);
+    printf("[INFO] Master (PID: %d): Scissioni ultimo secondo: %d\n", getpid(), statistiche->Nscissioni.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Energia prodotta totale: %d\n", getpid(), statistiche->energia_prodotta.totale);
+    printf("[INFO] Master (PID: %d): Energia prodotta ultimo secondo: %d\n", getpid(), statistiche->energia_prodotta.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Energia consumata totale: %d\n", getpid(), statistiche->energia_consumata.totale);
+    printf("[INFO] Master (PID: %d): Energia consumata ultimo secondo: %d\n", getpid(), statistiche->energia_consumata.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), statistiche->scorie_prodotte.totale);
+    printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), statistiche->scorie_prodotte.ultimo_secondo);
+
+}
+
 
 /**
  * Funzione di pulizia che gestisce la terminazione dei processi e la rimozione delle risorse.
@@ -48,6 +77,7 @@ void cleanup() {
 
 /**
  * Questa funzione viene lanciata quando il processo riceve un segnale di meltdown.
+ * @param sig Il segnale ricevuto.
  */
 void handle_meltdown(int sig) {
     cleanup();
@@ -56,6 +86,7 @@ void handle_meltdown(int sig) {
 }
 /**
  * Questa funzione viene lanciata quando il processo riceve un segnale di interruzione.
+ * @param sig Il segnale ricevuto.
  */
 void handle_interruption(int sig){
     cleanup();
@@ -272,7 +303,7 @@ int main() {
     createAttivatore();
     waitForNInitMsg(msqid, 1);
     
-
+    initStats(); // Inizializza le statistiche della simulazione
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination =0;
@@ -291,6 +322,7 @@ int main() {
         my_time.tv_sec = 1;
         my_time.tv_nsec = 0;
         nanosleep(&my_time, NULL);//Uso nanosleep per aspettare un secondo invece di sleep per evitare che il processo venga interrotto da un segnale
+        printStats();
     }
     cleanup();
     if(termination==0){

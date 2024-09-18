@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     // Ottieni l'ID della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
     int msqid;
-    if ((msqid = msgget(key, MES_PERM_RW_ALL)) < 0) {
+    if ((msqid = msgget(key, 0666)) < 0) {
         perror("Errore msgget: impossibile ottenere l'ID della coda di messaggi");
         exit(1);
     }

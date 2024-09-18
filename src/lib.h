@@ -35,6 +35,21 @@ typedef struct {
     int n_atom; /**< Numero atomico dell'atomo */
     pid_t pid; /**< PID del processo creato */
 } atom;
+/**
+ * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.
+ */
+typedef struct {
+    int totale;       // Valore totale
+    int ultimo_secondo; // Valore relativo all'ultimo secondo
+} Statistica;
+// Struttura per le statistiche della simulazione
+typedef struct {
+    Statistica Nattivazioni;     // Numero di attivazioni
+    Statistica Nscissioni;       // Numero di scissioni
+    Statistica energia_prodotta; // Quantità di energia prodotta
+    Statistica energia_consumata; // Quantità di energia consumata
+    Statistica scorie_prodotte;  // Quantità di scorie prodotte
+} Statistiche;
 
 extern int *N_ATOMI_INIT; /** Numero iniziale di atomi */
 extern int *N_ATOM_MAX; /** Numero massimo di atomi */
