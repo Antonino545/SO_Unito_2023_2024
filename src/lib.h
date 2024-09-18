@@ -14,9 +14,11 @@
 #include <stdarg.h>
 #include  <signal.h>
 
-#define INIT_MSG 1
-#define MESS_SIZE 128
-#define MESSAGE_QUEUE_KEY 1234
+#define INIT_MSG 1// Tipo di messaggio per l'inizializzazione che e di tipo 1
+#define MESS_SIZE 128 // Dimensione massima del messaggio
+#define MESSAGE_QUEUE_KEY 1234 //Key della coda di messaggi 
+#define MES_PERM_RW_ALL 0666 //Permessi di lettura e scrittura per tutti i processi dell
+
 /*
     * Struttura del messaggio.
     
@@ -33,6 +35,16 @@ typedef struct {
     int n_atom; /**< Numero atomico dell'atomo */
     pid_t pid; /**< PID del processo creato */
 } atom;
+
+extern int *N_ATOMI_INIT; /** Numero iniziale di atomi */
+extern int *N_ATOM_MAX; /** Numero massimo di atomi */
+extern int *MIN_N_ATOMICO; /** Numero atomico minimo */
+extern int *ENERGY_DEMAND; /** Domanda di energia */
+extern int *STEP; /** Passo per la variazione dell'energia */
+extern int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
+extern int *SIM_DURATION; /** Durata della simulazione */
+extern int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
+extern int *PID_MANSTER; /** PID del processo master */
 /**
  * Genera un numero casuale tra 1 e `max`. 
  * @param max Il valore massimo che può essere generato.

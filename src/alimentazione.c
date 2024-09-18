@@ -36,7 +36,7 @@ int main(int argc, char const *argv[]) {
     // Invia un messaggio al master
     key_t key = MESSAGE_QUEUE_KEY;
     int msqid;
-    if ((msqid = msgget(key, 0666)) < 0) {
+    if ((msqid = msgget(key, MES_PERM_RW_ALL)) < 0) {
         perror("msgget");
         exit(1);
     }

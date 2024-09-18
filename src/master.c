@@ -18,17 +18,10 @@
 /**
  * Puntatori alle variabili nella memoria condivisa.
  */
-int *N_ATOMI_INIT; /**< Numero iniziale di atomi */
-int *N_ATOM_MAX; /**< Numero massimo di atomi */
-int *MIN_N_ATOMICO; /**< Numero atomico minimo */
-int *ENERGY_DEMAND; /**< Domanda di energia */
-int *STEP; /**< Passo per la variazione dell'energia */
-int *N_NUOVI_ATOMI; /**< Numero di nuovi atomi */
-int *SIM_DURATION; /**< Durata della simulazione */
-int *ENERGY_EXPLODE_THRESHOLD; /**< Soglia di esplosione dell'energia */
-int energy = 0; /**< Energia corrente */
-int msqid; /**< ID della coda di messaggi */
-int *PID_MANSTER; /**< PID del processo master */
+
+int energy = 0; /**<Energia corrente */
+int msqid; /** ID della coda di messaggi */
+
 /**
  * Funzione di pulizia che gestisce la terminazione dei processi e la rimozione delle risorse.
  */
@@ -62,6 +55,14 @@ void handle_meltdown(int sig) {
     exit(EXIT_SUCCESS);
 }
 /**
+ * Questa funzione viene lanciata quando il processo riceve un segnale di interruzione.
+ */
+void handle_interruption(int sig){
+    cleanup();
+    printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa della ricezione di un segnale di interruzione. Chiusura programma.\n", getpid());
+    exit(EXIT_SUCCESS);
+}
+/**
  * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
  */
 void setup_signal_handler() {
@@ -70,6 +71,11 @@ void setup_signal_handler() {
     sa.sa_handler = handle_meltdown;// Imposta la funzione di gestione del segnale;
     sigemptyset(&sa.sa_mask);  // Inizializza il set dei segnali bloccati durante l'esecuzione della funzione di gestione
     sigaction(SIGUSR1, &sa, NULL);// Imposta la gestione del segnale SIGUSR1
+    struct sigaction interrupt_sa;
+    interrupt_sa.sa_handler = handle_interruption;
+    sigemptyset(&interrupt_sa.sa_mask);
+    sigaction(SIGINT, &interrupt_sa, NULL);
+
 } 
 
 
@@ -241,7 +247,7 @@ int main() {
 
     // Creazione della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
-    if ((msqid = msgget(key, IPC_CREAT | 0666)) < 0) {
+    if ((msqid = msgget(key, IPC_CREAT | MES_PERM_RW_ALL)) < 0) {
         perror("[ERROR] Master: Errore durante la creazione della coda di messaggi (msgget fallita)");
         exit(EXIT_FAILURE);
     }
@@ -269,13 +275,14 @@ int main() {
 
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
-
+    int termination =0;
     while (*SIM_DURATION > 0) {
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
        /* if(energy<*ENERGY_DEMAND){
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
             printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
             printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
+            termination=1;
             break;
         }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
@@ -286,6 +293,11 @@ int main() {
         nanosleep(&my_time, NULL);//Uso nanosleep per aspettare un secondo invece di sleep per evitare che il processo venga interrotto da un segnale
     }
     cleanup();
-    printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
+    if(termination==0){
+        printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
+    }
+    else if(termination==1){
+        printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di blackout . Chiusura programma.\n", getpid());
+    }
     exit(EXIT_SUCCESS);
 }

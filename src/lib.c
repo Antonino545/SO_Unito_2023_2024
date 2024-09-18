@@ -1,5 +1,15 @@
 #include "lib.h"
 
+int *N_ATOMI_INIT; /** Numero iniziale di atomi */
+int *N_ATOM_MAX; /** Numero massimo di atomi */
+int *MIN_N_ATOMICO; /** Numero atomico minimo */
+int *ENERGY_DEMAND; /** Domanda di energia */
+int *STEP; /** Passo per la variazione dell'energia */
+int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
+int *SIM_DURATION; /** Durata della simulazione */
+int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
+int *PID_MANSTER; /** PID del processo master */
+
 int generate_random(int max) {
     srand(time(NULL) * getpid());
     return rand() % max + 1; // Restituisce un numero tra 1 e max
@@ -7,7 +17,7 @@ int generate_random(int max) {
 
 void* create_shared_memory(const char *shm_name, size_t shm_size) {
     // Crea o apre una memoria condivisa
-    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
+    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, MES_PERM_RW_ALL);
     if (shm_fd == -1) {
         perror("[ERROR] Master: Errore durante la creazione della memoria condivisa (shm_open fallita)");
         exit(EXIT_FAILURE);
@@ -33,7 +43,7 @@ void* allocateParametresMemory() {
     const char *shm_name = "/Parametres";
     const size_t shm_size = 8 * sizeof(int); // 8 interi
 
-    int shm_fd = shm_open(shm_name, O_RDWR, 0666); // Apre la memoria condivisa in lettura e scrittura che è già stata creata
+    int shm_fd = shm_open(shm_name, O_RDWR, MES_PERM_RW_ALL); // Apre la memoria condivisa in lettura e scrittura che è già stata creata
     if (shm_fd == -1) {
         perror("Errore nella shm_open");
         exit(EXIT_FAILURE);
@@ -69,6 +79,6 @@ void waitForNInitMsg(int msqid, int n) {
             perror("Errore msgrcv: impossibile ricevere il messaggio");
             exit(EXIT_FAILURE);
         }
-        printf("[MESSRIC] %s\n", rbuf.mtext); 
+        printf("[MESSRIC] Master (PID: %d) - Message: %s\n", getpid(), rbuf.mtext);
     }
 }
