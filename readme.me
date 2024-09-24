@@ -1,9 +1,7 @@
 Build docker in caso ci siano modifiche nel dockerfile
 docker build --platform linux/amd64 -t ubuntu-so  .
 Run docker per mac di Antonino
-docker run -it --name SO-Project \         
-    -v "/Users/antonino/Documents/Project/Unito Project/SO-2024":/SO-2024 \
-    ubuntu-so      
+docker run -it --name SO-Project -v "/Users/antonino/Documents/Project/Unito Project/SO-2024":/SO-2024 ubuntu-so      
 Run docker per linux di Antonino
 docker run -it --name SO-Project -v "/home/antonino54/Documents/Project/Unito/SO-2024:/SO-2024" ubuntu-so
 
