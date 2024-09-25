@@ -123,40 +123,30 @@ void setup_signal_handler() {
 /*
  * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
  */
-void createAtomo()
-{
-    pid_t pid = fork();                                // Crea un nuovo processo
-    int numero_atomico = generate_random(*N_ATOM_MAX); // Genera un numero atomico casuale
-
-    if (pid < 0)
-    { // Errore nella creazione del processo
+void createAtomo() {
+    int numero_atomico = generate_random(*N_ATOM_MAX);
+    char num_atomico_str[20];
+    snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
+    
+    pid_t pid = fork();
+    if (pid < 0) {
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
         kill(*PID_MASTER, SIGUSR1);
-    }
-    else if (pid == 0)
-    { // Processo figlio
-        // Il figlio non cambia il proprio gruppo, sarà il padre a farlo.
-        char num_atomico_str[20];
-        snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico); // Converte il numero atomico in stringa
+    } else if (pid == 0) {
         printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
-
-        // Esegue `atomo` con il numero atomico come argomento
-        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
-        {
+        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
             exit(EXIT_FAILURE);
         }
-    }
-    else
-    { // Processo padre
-        // Imposta il gruppo del processo figlio allo stesso PID del padre (non del master)
-        if (setpgid(pid, getpid()) == -1)
-        {
-            perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
+    } else {
+        if (*ATOMO_GPID == -1) {
+            *ATOMO_GPID = pid; // Imposta il GPID del primo atomo
+            printf("[INFO] Master (PID: %d): GPID del primo atomo impostato a %d\n", getpid(), *ATOMO_GPID);
         }
-        else
-        {
-            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, getpid());
+        if (setpgid(pid, *ATOMO_GPID) == -1) {
+            perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
+        } else {
+            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *ATOMO_GPID);
         }
     }
 }
@@ -267,12 +257,11 @@ void readparameters(FILE *file) {
  * @return Codice di uscita del programma.
  */
 int main() {
-    setpgid(0, 0);
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale\n", getpid());
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
-    const size_t shm_size = 9 * sizeof(int); // Dimensione della memoria condivisa (8 interi)
+    const size_t shm_size = 10 * sizeof(int); // Dimensione della memoria condivisa (8 interi)
     void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
 
     // Puntatori alle variabili nella memoria condivisa
@@ -285,6 +274,9 @@ int main() {
     SIM_DURATION = (int *)(shmParamsPtr + 6 * sizeof(int));
     ENERGY_EXPLODE_THRESHOLD = (int *)(shmParamsPtr + 7 * sizeof(int));
     PID_MASTER=(int *)(shmParamsPtr + 8 * sizeof(int));
+    ATOMO_GPID=(pid_t *)(shmParamsPtr + 9 * sizeof(int));
+        *ATOMO_GPID=-1;
+
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 
     // Apri il file di configurazione e leggi i parametri

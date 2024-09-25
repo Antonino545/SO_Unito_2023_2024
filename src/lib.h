@@ -60,6 +60,7 @@ extern int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
 extern int *SIM_DURATION; /** Durata della simulazione */
 extern int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
 extern int *PID_MASTER; /** PID del processo master */
+extern pid_t *ATOMO_GPID; /** Gruppo di processi degli atomi */ 
 /**
  * Genera un numero casuale tra 1 e `max`. 
  * @param max Il valore massimo che può essere generato.
