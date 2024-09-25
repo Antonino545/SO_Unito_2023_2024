@@ -15,6 +15,7 @@
 #include  <signal.h>
 
 #define INIT_MSG 1// Tipo di messaggio per l'inizializzazione che e di tipo 1
+#define MSG_TYPE_START_SIM 2 // Tipo di messaggio per l'inizio della simulazione
 #define MESS_SIZE 128 // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 //Key della coda di messaggi 
 #define MES_PERM_RW_ALL 0666 //Permessi di lettura e scrittura per tutti i processi dell
@@ -100,6 +101,13 @@ void send_message_to_master(int msqid,long type, const char *format, ...);
  * @param msqid ID della coda di messaggi
  */
 void waitForNInitMsg(int msqid, int n) ;
-
+/**
+ * Funzione che invia un messaggio di inizio simulazione.
+ */
+void sendStartSimulationMessage(int msqid) ;
+/**
+ * Funzione che riceve un messaggio di inizio simulazione.
+ */
+void receiveStartSimulationMessage(int msqid)
 
 #endif // LIB_H

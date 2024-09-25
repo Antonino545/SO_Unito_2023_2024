@@ -72,6 +72,33 @@ void send_message_to_master(int msqid, long type, const char *format, ...) {
         exit(EXIT_FAILURE);
     }
 }
+
+void sendStartSimulationMessage(int msqid) {
+    msg_buffer msg;
+    msg.mtype = MSG_TYPE_START_SIM; // Imposta il tipo di messaggio
+
+    snprintf(msg.mtext, sizeof(msg.mtext), "Simulazione iniziata");
+
+    // Invia il messaggio alla coda di messaggi
+    if (msgsnd(msqid, &msg, sizeof(msg.mtext), 0) == -1) {
+        perror("[ERROR] Master: Impossibile inviare il messaggio di avvio della simulazione");
+        cleanup();
+        exit(EXIT_FAILURE);
+    }
+
+    printf("[INFO] Master (PID: %d): Messaggio di avvio simulazione inviato\n", getpid());
+}
+
+void receiveStartSimulationMessage(int msqid) {
+    msg_buffer msg;
+    if (msgrcv(msqid, &msg, sizeof(msg.mtext), MSG_TYPE_START_SIM, 0) == -1) {
+        perror("[ERROR] Atomo: Impossibile ricevere il messaggio di avvio simulazione");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("[INFO] Atomo (PID: %d): Messaggio ricevuto: %s\n", getpid(), msg.mtext);
+}
+
 void waitForNInitMsg(int msqid, int n) {
     msg_buffer rbuf;
     for (int i = 0; i < n; i++) {
