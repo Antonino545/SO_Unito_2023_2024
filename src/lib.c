@@ -8,7 +8,7 @@ int *STEP; /** Passo per la variazione dell'energia */
 int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
 int *SIM_DURATION; /** Durata della simulazione */
 int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
-int *PID_MANSTER; /** PID del processo master */
+int *PID_MASTER; /** PID del processo master */
 
 int generate_random(int max) {
     srand(time(NULL) * getpid());

@@ -1,6 +1,6 @@
 #include "lib.h"
 
-int *PID_MANSTER;
+int *PID_MASTER;
 int *MIN_N_ATOMICO;
 int *N_ATOM_MAX; /**< Numero massimo di atomi */
 
@@ -13,7 +13,7 @@ void createAtomo() {
 
     if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante l'aggiunta di un nuovo atomo da parte dell'alimentazione");
-        kill(*PID_MANSTER, SIGUSR1);
+        kill(*PID_MASTER, SIGUSR1);
 
     } else if (pid == 0) { // Processo figlio
         char num_atomico_str[20];
@@ -46,7 +46,7 @@ int main(int argc, char const *argv[]) {
     send_message_to_master( msqid,INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
     wait(NULL); // Aspetta che il processo figlio si concluda, se necessario
     void* shm_ptr= allocateParametresMemory(); // Inizializza la memoria condivisa
-    PID_MANSTER = (int *)(shm_ptr + 8 * sizeof(int)); // Recupera il PID del processo master dalla memoria condivisa
+    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int)); // Recupera il PID del processo master dalla memoria condivisa
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int)); // Recupera il valore di N_ATOM_MAX dalla memoria condivisa
     exit(EXIT_SUCCESS);

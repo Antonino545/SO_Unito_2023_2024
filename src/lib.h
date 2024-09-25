@@ -59,7 +59,7 @@ extern int *STEP; /** Passo per la variazione dell'energia */
 extern int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
 extern int *SIM_DURATION; /** Durata della simulazione */
 extern int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
-extern int *PID_MANSTER; /** PID del processo master */
+extern int *PID_MASTER; /** PID del processo master */
 /**
  * Genera un numero casuale tra 1 e `max`. 
  * @param max Il valore massimo che può essere generato.

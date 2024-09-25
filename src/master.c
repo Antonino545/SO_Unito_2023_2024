@@ -96,6 +96,10 @@ void handle_interruption(int sig){
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa della ricezione di un segnale di interruzione. Chiusura programma.\n", getpid());
     exit(EXIT_SUCCESS);
 }
+void handle_sigusr2(int signum) {
+    // Custom logic for handling SIGUSR2
+    printf("Received SIGUSR2 signal\n");
+}
 /**
  * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
  */
@@ -109,37 +113,53 @@ void setup_signal_handler() {
     interrupt_sa.sa_handler = handle_interruption;
     sigemptyset(&interrupt_sa.sa_mask);
     sigaction(SIGINT, &interrupt_sa, NULL);
-
+    struct sigaction sa2;
+    sa2.sa_handler = handle_sigusr2;
+    sigemptyset(&sa2.sa_mask);
+    sigaction(SIGUSR2, &sa2, NULL);
 } 
 
 
 /*
  * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
  */
-void createAtomo() {
-    pid_t pid = fork(); // Crea un nuovo processo
+void createAtomo()
+{
+    pid_t pid = fork();                                // Crea un nuovo processo
     int numero_atomico = generate_random(*N_ATOM_MAX); // Genera un numero atomico casuale
 
-    if (pid < 0) { // Errore nella creazione del processo
+    if (pid < 0)
+    { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-        kill(*PID_MANSTER, SIGUSR1);
-
-    } else if (pid == 0) { // Processo figlio
+        kill(*PID_MASTER, SIGUSR1);
+    }
+    else if (pid == 0)
+    { // Processo figlio
+        // Il figlio non cambia il proprio gruppo, sarà il padre a farlo.
         char num_atomico_str[20];
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico); // Converte il numero atomico in stringa
-
         printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
 
         // Esegue `atomo` con il numero atomico come argomento
-        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1) {
+        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
+        {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
             exit(EXIT_FAILURE);
         }
-    } else { // Processo padre
-        printf("[INFO] Master (PID: %d): Processo atomo creato con PID: %d\n", getpid(), pid);
+    }
+    else
+    { // Processo padre
+        // Imposta il gruppo del processo figlio allo stesso PID del padre (non del master)
+        if (setpgid(pid, getpid()) == -1)
+        {
+            perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
+        }
+        else
+        {
+            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, getpid());
+        }
     }
 }
-
 /**
  * Crea un nuovo processo figlio per eseguire il programma `attivatore`.
  */
@@ -148,7 +168,7 @@ void createAttivatore() {
 
     if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un attivatore");
-        kill(*PID_MANSTER, SIGUSR1);
+        kill(*PID_MASTER, SIGUSR1);
 
     } else if (pid == 0) { // Processo figlio
         printf("[INFO] Attivatore (PID: %d): Avvio processo attivatore\n", getpid());
@@ -171,7 +191,7 @@ void createAlimentazione() {
 
     if (pid < 0) { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un Alimentazione");
-        kill(*PID_MANSTER, SIGUSR1);
+        kill(*PID_MASTER, SIGUSR1);
 
     } else if (pid == 0) { // Processo figlio
         printf("[INFO] Alimentazione (PID: %d): Avvio processo alimentazione\n", getpid());
@@ -195,7 +215,7 @@ void readparameters(FILE *file) {
         perror("[ERROR] Master: Impossibile aprire il file di configurazione");
         exit(EXIT_FAILURE);
     }
-    *PID_MANSTER=getpid();
+    *PID_MASTER=getpid();
     printf("[DEBUG] Master: PID impostato a %d\n", getpid());
     char line[256]; // Buffer per leggere ogni linea del file
     while (fgets(line, sizeof(line), file)) { // Legge il file riga per riga
@@ -247,6 +267,7 @@ void readparameters(FILE *file) {
  * @return Codice di uscita del programma.
  */
 int main() {
+    setpgid(0, 0);
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale\n", getpid());
 
     // Configura la memoria condivisa
@@ -263,7 +284,7 @@ int main() {
     N_NUOVI_ATOMI = (int *)(shmParamsPtr + 5 * sizeof(int));
     SIM_DURATION = (int *)(shmParamsPtr + 6 * sizeof(int));
     ENERGY_EXPLODE_THRESHOLD = (int *)(shmParamsPtr + 7 * sizeof(int));
-    PID_MANSTER=(int *)(shmParamsPtr + 8 * sizeof(int));
+    PID_MASTER=(int *)(shmParamsPtr + 8 * sizeof(int));
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 
     // Apri il file di configurazione e leggi i parametri
