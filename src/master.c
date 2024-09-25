@@ -59,7 +59,7 @@ void printStats(){
  */
 void cleanup() {
         printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
-
+        killpg(*ATOMO_GPID, SIGINT); // Invia il segnale di terminazione a tutti i processi figli
         // Attende la terminazione di tutti i processi figli
         while (wait(NULL) != -1);
         const char  *shm_name="/Parametres";

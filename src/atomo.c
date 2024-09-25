@@ -6,49 +6,47 @@
 #include <string.h>
 #include <time.h>
 
-int msqid; // Declare msqid as a global variable
-
-int numero_atomico = 0;
+int msqid; // ID della coda di messaggi
+int numero_atomico = 0; // Numero atomico del processo atomo
+int running = 1; // Flag che indica se il processo è in esecuzione
 
 /**
  * Funzione che gestisce la divisione dell'atomo.
+ * Viene invocata quando il processo riceve il segnale SIGUSR2.
  */
 void handle_scissione(int sig)
 {
-    printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
-    // Genera un numero casuale per decidere se scindersi
-    srand(time(NULL) ^ getpid());   // Inizializza il seed con il tempo attuale e il PID
-    int probabilita = rand() % 100; // Genera un numero tra 0 e 99 (percentuale)
+    srand(time(NULL) ^ getpid()); // Inizializza il seed del numero casuale con il tempo e il PID
+    int probabilita = rand() % 100; // Genera un numero tra 0 e 99
 
     if (probabilita < 50)
-    { // 50% di probabilità di scindersi
-        int numero_atomico_figlio= generate_random(numero_atomico);
-        numero_atomico -= numero_atomico_figlio;
+    { 
+        int numero_atomico_figlio = generate_random(numero_atomico);
+        numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre
+        printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
 
-        printf("[INFO] Atomo (PID: %d): Scissione avviata (50%% probabilità soddisfatta)\n", getpid());
-
+        // Verifica se il numero atomico è inferiore al minimo consentito
         if (numero_atomico < *MIN_N_ATOMICO)
         {
             printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
-                    send_message_to_master(msqid, INIT_MSG, "[INFO] Atomo (PID: %d): Atomo terminato", getpid());
-
-        
+            send_message_to_master(msqid, INIT_MSG, "[INFO] Atomo (PID: %d): Atomo terminato", getpid());
             exit(EXIT_SUCCESS);
         }
+
+        printf("[INFO] Atomo (PID: %d): Scissione avviata \n", getpid());
 
         // Crea un nuovo processo figlio per rappresentare la scissione
         pid_t pid = fork();
         if (pid == 0)
         {
-            // Questo è il processo figlio (nuovo atomo)
-            printf("[INFO]  Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
-            // Il processo figlio può eseguire logica specifica qui
+            // Processo figlio: rappresenta il nuovo atomo creato dalla scissione
+            printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
             
-             char num_atomico_str[20];
-            snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio); // Converte il numero atomico in stringa
-            printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
+            // Converte il numero atomico in stringa e avvia il nuovo processo atomo
+            char num_atomico_str[20];
+            snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio);
+            printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico_figlio);
 
-            // Esegue `atomo` con il numero atomico come argomento
             if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
             {
                 perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
@@ -57,9 +55,10 @@ void handle_scissione(int sig)
         }
         else if (pid > 0)
         {
-                if (setpgid(pid, getpid()) == -1)
+            // Processo padre: imposta il gruppo di processi del figlio
+            if (setpgid(pid, getpid()) == -1)
             {
-                printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio", getpid());
+                printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
             }
             else
             {
@@ -68,15 +67,35 @@ void handle_scissione(int sig)
         }
         else
         {
+            // Errore nella fork
             perror("[ERROR] Atomo: Fork fallita durante la scissione");
+               kill(*PID_MASTER, SIGUSR1);
         }
-    }
-    else
-    {
-        printf("[INFO] Atomo (PID: %d): Non scisso (50%% probabilità non soddisfatta)\n", getpid());
     }
 }
 
+/**
+ * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
+ * Cambia lo stato della variabile "running" per uscire dal ciclo di attesa.
+ */
+void handle_sigint(int sig)
+{
+    printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+    running = 0; // Imposta running a 0 per terminare il ciclo di attesa
+}
+
+/**
+ * Funzione che calcola l'energia liberata durante la divisione dell'atomo.
+ * 
+ * @param n1 Numero atomico del padre
+ * @param n2 Numero atomico del figlio
+ * @return Energia liberata
+ */
+int energialiberata(int n1, int n2)
+{
+    int energia_liberata = (n1 * n2) - (n1 > n2 ? n1 : n2); // Formula per calcolare l'energia
+    return energia_liberata;
+}
 
 int main(int argc, char *argv[])
 {
@@ -86,33 +105,45 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    void *shm_ptr = allocateParametresMemory();         // Inizializza la memoria condivisa
-    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
-    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));    // Recupera il PID del processo master dalla memoria condivisa
+    // Inizializza memoria condivisa e recupera parametri
+    void *shm_ptr = allocateParametresMemory();         
+    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
+    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));    
     numero_atomico = atoi(argv[1]);
-    printf("[INFO] Atomo (PID: %d): Sono stato appena creato con numero atomico %d con gruppo di processi %d\n", getpid(), numero_atomico, getpgrp());
+
+    printf("[INFO] Atomo (PID: %d): Creato con numero atomico %d e gruppo di processi %d\n", getpid(), numero_atomico, getpgrp());
 
     // Ottieni l'ID della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
-    
     if ((msqid = msgget(key, 0666)) < 0)
     {
-        perror("Errore msgget: impossibile ottenere l'ID della coda di messaggi");
-        exit(1);
+        perror("[ERROR] Atomo: Impossibile ottenere l'ID della coda di messaggi");
+        exit(EXIT_FAILURE);
     }
 
-    // Verifica se l'atomo deve terminare immediatamente
-   struct sigaction sa2;
+    // Gestione dei segnali per la scissione (SIGUSR2) e la terminazione (SIGINT)
+    struct sigaction sa2;
     bzero(&sa2, sizeof(sa2));
-    sa2.sa_handler = handle_scissione;  // Setting the handler for SIGUSR2
+    sa2.sa_handler = handle_scissione;
     sigemptyset(&sa2.sa_mask);
     sigaction(SIGUSR2, &sa2, NULL);
-    
 
-    // Invia messaggio di "Inizializzazione completata" al master
+    struct sigaction sa_int;
+    bzero(&sa_int, sizeof(sa_int));
+    sa_int.sa_handler = handle_sigint;
+    sigemptyset(&sa_int.sa_mask);
+    sigaction(SIGINT, &sa_int, NULL);
+
+    // Notifica al master che l'inizializzazione è completata
     send_message_to_master(msqid, INIT_MSG, "[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
-    printf("[INFO] Atomo (PID: %d): In attesa di messaggi di scissione\n", getpid());
-    
-    wait(NULL); // Wait for child process to finish
-   exit(EXIT_SUCCESS);
+    printf("[INFO] Atomo (PID: %d): In attesa di messaggi di scissione o terminazione\n", getpid());
+
+    // Ciclo principale di attesa
+    while (running)
+    {
+        pause(); // Aspetta un segnale
+    }
+
+    printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
+    exit(EXIT_SUCCESS);
 }

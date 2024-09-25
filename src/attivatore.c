@@ -12,10 +12,11 @@ int main(int argc, char const *argv[]) {
         perror("msgget");
         exit(1);
     }
-
+    void *shm_ptr = allocateParametresMemory();     
+    ATOMO_GPID=(pid_t *)(shm_ptr + 9 * sizeof(int));
     send_message_to_master( msqid, INIT_MSG,"[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
     printf("[INFO] Attivatore (PID: %d): Invio messaggio di scissione agli atomi\n", getpid());
-    killpg(getppid(), SIGUSR2); 
+    killpg(*ATOMO_GPID, SIGUSR2); 
     wait(NULL); // Aspetta che il processo figlio si concluda, se necessario
     exit(EXIT_SUCCESS);
 }
