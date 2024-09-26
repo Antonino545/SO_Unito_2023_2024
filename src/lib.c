@@ -11,7 +11,6 @@ int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
 int *PID_MASTER; /** PID del processo master */
 int *ATOMO_GPID; /** Gruppo di processi degli atomi */
 int generate_random(int max) {
-    srand(time(NULL) * getpid());
     return rand() % max + 1; // Restituisce un numero tra 1 e max
 }
 

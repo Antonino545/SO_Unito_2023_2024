@@ -24,7 +24,7 @@ int main(int argc, char const *argv[]) {
         exit(1);
     }
     void *shm_ptr = allocateParametresMemory();     
-    ATOMO_GPID=(pid_t *)(shm_ptr + 9 * sizeof(int));
+    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
     send_message_to_master( msqid, INIT_MSG,"[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
     struct sigaction sa_int;
     bzero(&sa_int, sizeof(sa_int));
@@ -36,7 +36,7 @@ int main(int argc, char const *argv[]) {
     while (running)
     {
     printf("[INFO] Attivatore (PID: %d): Invio messaggio di scissione agli atomi\n", getpid());
-    killpg(*ATOMO_GPID, SIGUSR2);
+    killpg(*PID_MASTER, SIGUSR2);
     nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);// Aspetta 0.5 secondi
     }
     

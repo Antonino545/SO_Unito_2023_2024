@@ -32,16 +32,13 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else {
-        if (*ATOMO_GPID == -1) {
-            *ATOMO_GPID = pid; // Imposta il GPID del primo atomo
-            printf("[INFO] Master (PID: %d): GPID del primo atomo impostato a %d\n", getpid(), *ATOMO_GPID);
-        }
-        if (setpgid(pid, *ATOMO_GPID) == -1) {
-            perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
-        } else {
-            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *ATOMO_GPID);
-        }
-    }
+            if (setpgid(pid,*PID_MASTER) == -1) {
+                perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
+            } else {
+                printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *PID_MASTER);
+            }
+            }
+
 }
 void setup_signal_handler(){
 
@@ -58,7 +55,6 @@ int main(int argc, char const *argv[]) {
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int)); // Recupera il PID del processo master dalla memoria condivisa
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int)); // Recupera il valore di N_ATOM_MAX dalla memoria condivisa
-    ATOMO_GPID=( pid_t *)(shm_ptr + 9 * sizeof(int)); // Recupera il GPID degli atomi dalla memoria condivisa
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int)); // Recupera il numero di nuovi atomi dalla memoria condivisa
     setup_signal_handler(); // Imposta il gestore del segnale per il SIGINT
     // Invia un messaggio al master

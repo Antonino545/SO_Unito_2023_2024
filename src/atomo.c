@@ -56,7 +56,7 @@ void handle_scissione(int sig)
         else if (pid > 0)
         {
             // Processo padre: imposta il gruppo di processi del figlio
-            if (setpgid(pid, getpid()) == -1)
+            if (setpgid(pid, *PID_MASTER) == -1)
             {
                 printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
             }
@@ -80,7 +80,7 @@ void handle_scissione(int sig)
  */
 void handle_sigint(int sig)
 {
-    printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+    printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGTERM)\n", getpid());
     running = 0; // Imposta running a 0 per terminare il ciclo di attesa
 }
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     bzero(&sa_int, sizeof(sa_int));
     sa_int.sa_handler = handle_sigint;
     sigemptyset(&sa_int.sa_mask);
-    sigaction(SIGINT, &sa_int, NULL);
+    sigaction(SIGTERM, &sa_int, NULL);
 
     // Notifica al master che l'inizializzazione è completata
     send_message_to_master(msqid, INIT_MSG, "[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());

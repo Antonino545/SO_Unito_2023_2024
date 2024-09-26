@@ -60,7 +60,7 @@ void printStats(){
  */
 void cleanup() {
         printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
-        killpg(*ATOMO_GPID, SIGINT); // Invia il segnale di terminazione a tutti i processi figli
+        killpg(getpid(), SIGTERM); // Invia il segnale di terminazione a tutti i processi figli
         kill(attivatore_pid, SIGINT); // Invia il segnale di terminazione al processo attivatore
         kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
         // Attende la terminazione di tutti i processi figli
@@ -101,7 +101,11 @@ void handle_interruption(int sig){
 }
 void handle_sigusr2(int signum) {
     // Custom logic for handling SIGUSR2
-    printf("Received SIGUSR2 signal\n");
+    printf("[INFO] Master (PID: %d): Ricevuto SIGUSR2 , ma lo ignoro perche destinato agli atomi\n", getpid());
+}
+void handle_sigterm_master(int sig) {
+    // Ignora SIGTERM nel master
+    printf("Master %d: Ricevuto SIGTERM, ma lo ignoro perche destinato agli atomi\n", getpid());
 }
 /**
  * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
@@ -120,6 +124,11 @@ void setup_signal_handler() {
     sa2.sa_handler = handle_sigusr2;
     sigemptyset(&sa2.sa_mask);
     sigaction(SIGUSR2, &sa2, NULL);
+       struct sigaction sa_term;
+    sa_term.sa_handler = handle_sigterm_master;
+    sa_term.sa_flags = 0;
+    sigemptyset(&sa_term.sa_mask);
+    sigaction(SIGTERM, &sa_term, NULL);
 } 
 
 
@@ -142,16 +151,12 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else {
-        if (*ATOMO_GPID == -1) {
-            *ATOMO_GPID = pid; // Imposta il GPID del primo atomo
-            printf("[INFO] Master (PID: %d): GPID del primo atomo impostato a %d\n", getpid(), *ATOMO_GPID);
-        }
-        if (setpgid(pid, *ATOMO_GPID) == -1) {
+          if (setpgid(pid, getpid()) == -1) {
             perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
         } else {
-            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *ATOMO_GPID);
+            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *PID_MASTER);
         }
-    }
+        }
 }
 /**
  * Crea un nuovo processo figlio per eseguire il programma `attivatore`.
@@ -262,7 +267,8 @@ void readparameters(FILE *file) {
  * @return Codice di uscita del programma.
  */
 int main() {
-    printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale\n", getpid());
+    setpgid(0,0);
+    printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(),getpgrp());
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
@@ -279,8 +285,7 @@ int main() {
     SIM_DURATION = (int *)(shmParamsPtr + 6 * sizeof(int));
     ENERGY_EXPLODE_THRESHOLD = (int *)(shmParamsPtr + 7 * sizeof(int));
     PID_MASTER=(int *)(shmParamsPtr + 8 * sizeof(int));
-    ATOMO_GPID=(pid_t *)(shmParamsPtr + 9 * sizeof(int));
-        *ATOMO_GPID=-1;
+
 
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 
