@@ -105,7 +105,7 @@ void handle_sigusr2(int signum) {
 }
 void handle_sigterm_master(int sig) {
     // Ignora SIGTERM nel master
-    printf("Master %d: Ricevuto SIGTERM, ma lo ignoro perche destinato agli atomi\n", getpid());
+    printf("[INFO] Master %d: Ricevuto SIGTERM, ma lo ignoro perche destinato agli atomi\n", getpid());
 }
 /**
  * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
