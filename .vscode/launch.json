@@ -11,7 +11,7 @@
       "cwd": "/SO-2024/src",
       "program": "/SO-2024/src/build/Debug/outDebug",
       "MIMode": "gdb",
-      "miDebuggerPath": "/usr/bin/gdb-7",
+      "miDebuggerPath": "gdb",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",

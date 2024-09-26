@@ -22,7 +22,8 @@
 
 Statistiche *statistiche; // Statistiche della simulazione
 int msqid; /** ID della coda di messaggi */
- 
+ pid_t attivatore_pid; /** PID del processo attivatore */
+    pid_t alimentazione_pid; /** PID del processo alimentazione */
  /**
   * Funzione che initilizza le statistiche della simulazione.
   */
@@ -60,6 +61,8 @@ void printStats(){
 void cleanup() {
         printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
         killpg(*ATOMO_GPID, SIGINT); // Invia il segnale di terminazione a tutti i processi figli
+        kill(attivatore_pid, SIGINT); // Invia il segnale di terminazione al processo attivatore
+        kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
         // Attende la terminazione di tutti i processi figli
         while (wait(NULL) != -1);
         const char  *shm_name="/Parametres";
@@ -169,6 +172,7 @@ void createAttivatore() {
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
+    attivatore_pid=pid;
         printf("[INFO] Master (PID: %d): Processo attivatore creato con PID: %d\n", getpid(), pid);
     }
 }
@@ -192,6 +196,7 @@ void createAlimentazione() {
             exit(EXIT_FAILURE);
         }
     } else { // Processo padre
+    alimentazione_pid=pid;
         printf("[INFO] Master (PID: %d): Processo alimentazione creato con PID: %d\n", getpid(), pid);
     }
 }
@@ -323,6 +328,8 @@ int main() {
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination =0;
+    sendStartSimulationMessage(msqid);
+    sendStartSimulationMessage(msqid);
     while (*SIM_DURATION > 0) {
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
        /* if(energy<*ENERGY_DEMAND){

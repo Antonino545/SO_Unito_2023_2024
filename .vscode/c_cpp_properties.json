@@ -3,23 +3,21 @@
         {
             "name": "linux-gcc-x64",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/usr/include"
+                "${workspaceFolder}/**"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "${default}",
+            "cppStandard": "${default}",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compilerArgs": [
+                "-D_GNU_SOURCE",
+                "-Wvla",
+                "-Wextra",
+                "-Werror"
             ],
             "defines": [
-                "_GNU_SOURCE"
-            ],
-            "compilerArgs": [
-                "-Wall",
-                "-Wextra",
-                "-Werror",
                 "-D_GNU_SOURCE"
-            ],
-            "compilerPath": "/usr/bin/gcc-7",
-            "cStandard": "c99",
-            "cppStandard": "gnu++14",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.makefile-tools"
+            ]
         }
     ],
     "version": 4

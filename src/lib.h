@@ -108,6 +108,6 @@ void sendStartSimulationMessage(int msqid) ;
 /**
  * Funzione che riceve un messaggio di inizio simulazione.
  */
-void receiveStartSimulationMessage(int msqid)
+void receiveStartSimulationMessage(int msqid,int attivatore);
 
 #endif // LIB_H

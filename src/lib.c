@@ -82,21 +82,24 @@ void sendStartSimulationMessage(int msqid) {
     // Invia il messaggio alla coda di messaggi
     if (msgsnd(msqid, &msg, sizeof(msg.mtext), 0) == -1) {
         perror("[ERROR] Master: Impossibile inviare il messaggio di avvio della simulazione");
-        cleanup();
-        exit(EXIT_FAILURE);
+        kill(*PID_MASTER, SIGUSR1);
+    
     }
 
     printf("[INFO] Master (PID: %d): Messaggio di avvio simulazione inviato\n", getpid());
 }
 
-void receiveStartSimulationMessage(int msqid) {
+void receiveStartSimulationMessage(int msqid,int attivatore) {
     msg_buffer msg;
-    if (msgrcv(msqid, &msg, sizeof(msg.mtext), MSG_TYPE_START_SIM, 0) == -1) {
-        perror("[ERROR] Atomo: Impossibile ricevere il messaggio di avvio simulazione");
+    if (msgrcv(msqid, &msg, sizeof(msg.mtext), MSG_TYPE_START_SIM, 0) < 0) {
+        perror("[ERROR] Attivatore: Impossibile ricevere il messaggio di avvio simulazione");
         exit(EXIT_FAILURE);
     }
 
-    printf("[INFO] Atomo (PID: %d): Messaggio ricevuto: %s\n", getpid(), msg.mtext);
+    if(attivatore==1)
+        printf("[INFO] Attivatore (PID: %d): Messaggio ricevuto: %s\n", getpid(), msg.mtext);
+    else
+        printf("[INFO] Alimentazione (PID: %d): Messaggio ricevuto: %s\n", getpid(), msg.mtext);
 }
 
 void waitForNInitMsg(int msqid, int n) {
