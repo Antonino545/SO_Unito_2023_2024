@@ -359,5 +359,6 @@ int main() {
     else if(termination==1){
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di blackout . Chiusura programma.\n", getpid());
     }
+    //
     exit(EXIT_SUCCESS);
 }
