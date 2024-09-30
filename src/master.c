@@ -151,11 +151,7 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else {
-          if (setpgid(pid, getpid()) == -1) {
-            perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
-        } else {
-            printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *PID_MASTER);
-        }
+     
         }
 }
 /**
@@ -321,14 +317,16 @@ int main() {
     waitForNInitMsg(msqid, *N_ATOMI_INIT);
 
     printf("[INFO] Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
+     printf("---------------------------------------\n");
     // Creazione dei processi necessari
     printf("[INFO] Master (PID: %d): Creazione del processo alimentatore\n", getpid());
     createAlimentazione();
     waitForNInitMsg(msqid, 1);
+     printf("---------------------------------------\n");
     printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
     createAttivatore();
     waitForNInitMsg(msqid, 1);
-    
+     printf("---------------------------------------\n");
     initStats(); // Inizializza le statistiche della simulazione
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());

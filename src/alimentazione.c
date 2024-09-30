@@ -1,7 +1,7 @@
 #include "lib.h"
 
 int running = 0; // Flag che indica se il processo è in esecuzione
-
+int msqid; // ID della coda di messaggi
 /**
  * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
  * Cambia lo stato della variabile "running" per uscire dal ciclo di attesa.
@@ -31,7 +31,7 @@ void createAtomo() {
     
     pid_t pid = fork();
     if (pid < 0) {
-        perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
+        perror("[ERROR] Alimentatore: Fork fallita durante la creazione di un atomo");
         kill(*PID_MASTER, SIGUSR1);
     } else if (pid == 0) {
         printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
@@ -40,12 +40,9 @@ void createAtomo() {
             exit(EXIT_FAILURE);
         }
     } else {
-            if (setpgid(pid,*PID_MASTER) == -1) {
-                perror("[ERROR] Master: Impossibile impostare il gruppo di processi del figlio");
-            } else {
-                printf("[INFO] Master (PID: %d): Processo atomo con PID: %d, gruppo impostato a %d\n", getpid(), pid, *PID_MASTER);
-            }
-            }
+        //il padre aspetta il messaggio di inizializzazione del figlio
+        waitForNInitMsg(msqid, 1);
+    }
 
 }
 void setup_signal_handler(){
@@ -72,13 +69,12 @@ int main(int argc, char const *argv[]) {
     setup_signal_handler(); // Imposta il gestore del segnale per il SIGINT
     // Invia un messaggio al master
     key_t key = MESSAGE_QUEUE_KEY;
-    int msqid;
     if ((msqid = msgget(key, MES_PERM_RW_ALL)) < 0) {
         perror("msgget");
         exit(1);
     }
 
-    send_message_to_master( msqid,INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
+    send_message( msqid,INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
 
     pause(); // Attendi l'arrivo di un segnale
     while (running)

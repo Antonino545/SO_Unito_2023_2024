@@ -92,7 +92,7 @@ void* allocateParametresMemory();
  * @param type Tipo del messaggio
  * @param ... Argomenti variabili per il formato
  */
-void send_message_to_master(int msqid,long type, const char *format, ...);
+void send_message(int msqid,long type, const char *format, ...);
 
 
 /**

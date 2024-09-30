@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]) {
     }
     void *shm_ptr = allocateParametresMemory();     
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
-    send_message_to_master( msqid, INIT_MSG,"[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
+    send_message( msqid, INIT_MSG,"[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
     struct sigaction sa_int;
     bzero(&sa_int, sizeof(sa_int));
     sa_int.sa_handler = handle_sigint;
@@ -47,9 +47,8 @@ int main(int argc, char const *argv[]) {
     pause(); // Attendi l'arrivo di un segnale
     while (running)
     {
-    printf("[INFO] Attivatore (PID: %d): Invio messaggio di scissione agli atomi\n", getpid());
     killpg(*PID_MASTER, SIGUSR2);
-    sleep(5);
+    sleep(3);
     }
     wait(NULL); // Aspetta che il processo figlio si concluda, se necessario
     exit(EXIT_SUCCESS);

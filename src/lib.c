@@ -1,4 +1,5 @@
 #include "lib.h"
+#include <errno.h>
 
 int *N_ATOMI_INIT; /** Numero iniziale di atomi */
 int *N_ATOM_MAX; /** Numero massimo di atomi */
@@ -56,19 +57,32 @@ void* allocateParametresMemory() {
     return shm_ptr;
 }
 
-void send_message_to_master(int msqid, long type, const char *format, ...) {
-    msg_buffer sbuf;
-    va_list args;
+void send_message(int msqid, long type, const char *format, ...) {
+    msg_buffer message;
+    message.mtype = type;
+    snprintf(message.mtext, sizeof(message.mtext), "%s", format);
 
-    sbuf.mtype = type;  // Tipo di messaggio (puoi cambiarlo se necessario)
-    
-    va_start(args, format);
-    vsnprintf(sbuf.mtext, sizeof(sbuf.mtext), format, args);
-    va_end(args);
-
-    if (msgsnd(msqid, &sbuf, sizeof(sbuf.mtext), IPC_NOWAIT) < 0) {
-        perror("Errore msgsnd: impossibile inviare il messaggio");
-        exit(EXIT_FAILURE);
+    int attempts = 0;
+    while (msgsnd(msqid, &message, sizeof(message.mtext), IPC_NOWAIT) == -1)
+    {
+        if (errno == EAGAIN)
+        {
+            if (attempts < 5)
+            {
+                attempts++;
+                usleep(100000); // Attende 100ms prima di ritentare
+            }
+            else
+            {
+                perror("Errore msgsnd: impossibile inviare il messaggio");
+                break;
+            }
+        }
+        else
+        {
+            perror("Errore msgsnd: impossibile inviare il messaggio");
+            break;
+        }
     }
 }
 
