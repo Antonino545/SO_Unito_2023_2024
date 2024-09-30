@@ -333,8 +333,9 @@ int main() {
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination =0;
-    sendStartSimulationMessage(msqid);
-    sendStartSimulationMessage(msqid);
+    printf("Attivatore PID: %d\n", attivatore_pid);
+    printf("Alimentazione PID: %d\n", alimentazione_pid);
+    sendStartSimulationSignal(attivatore_pid, alimentazione_pid);
     while (*SIM_DURATION > 0) {
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
        /* if(energy<*ENERGY_DEMAND){

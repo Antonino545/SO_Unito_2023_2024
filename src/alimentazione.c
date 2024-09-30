@@ -1,6 +1,6 @@
 #include "lib.h"
 
-int running = 1; // Flag che indica se il processo è in esecuzione
+int running = 0; // Flag che indica se il processo è in esecuzione
 
 /**
  * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
@@ -11,6 +11,14 @@ void handle_sigint(int sig)
      (void)sig;  // Suppresses unused parameter warning
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     running = 0; // Imposta running a 0 per terminare il ciclo di attesa
+}
+/**
+ * Funzione che gestisce il segnale SIGUSR2 per iniziare la simulazione.
+ */
+void handle_start_simulation(int sig) {
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di inizio simulazione (SIGUSR2)\n", getpid());
+    running = 1;
+    // Codice per iniziare la simulazione
 }
 
 /*
@@ -47,6 +55,11 @@ void setup_signal_handler(){
     sa_int.sa_handler = handle_sigint;
     sigemptyset(&sa_int.sa_mask);
     sigaction(SIGINT, &sa_int, NULL);
+        struct sigaction sa_start_simulation;
+    bzero(&sa_start_simulation, sizeof(sa_start_simulation));
+    sa_start_simulation.sa_handler = handle_start_simulation;
+    sigemptyset(&sa_start_simulation.sa_mask);
+    sigaction(SIGUSR2, &sa_start_simulation, NULL);
 }
 
 int main(int argc, char const *argv[]) {
@@ -67,8 +80,7 @@ int main(int argc, char const *argv[]) {
 
     send_message_to_master( msqid,INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
 
-    receiveStartSimulationMessage(msqid,0); // Aspetta il messaggio di inizio simulazione d
-    printf("[INFO] Alimentazione (PID: %d): Inizio simulazione\n", getpid());
+    pause(); // Attendi l'arrivo di un segnale
     while (running)
     {
         for(int i=0; i<*N_NUOVI_ATOMI; i++){

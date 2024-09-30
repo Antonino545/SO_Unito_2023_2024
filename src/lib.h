@@ -104,10 +104,6 @@ void waitForNInitMsg(int msqid, int n) ;
 /**
  * Funzione che invia un messaggio di inizio simulazione.
  */
-void sendStartSimulationMessage(int msqid) ;
-/**
- * Funzione che riceve un messaggio di inizio simulazione.
- */
-void receiveStartSimulationMessage(int msqid,int attivatore);
+void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid) ;
 
 #endif // LIB_H

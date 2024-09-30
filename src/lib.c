@@ -72,34 +72,6 @@ void send_message_to_master(int msqid, long type, const char *format, ...) {
     }
 }
 
-void sendStartSimulationMessage(int msqid) {
-    msg_buffer msg;
-    msg.mtype = MSG_TYPE_START_SIM; // Imposta il tipo di messaggio
-
-    snprintf(msg.mtext, sizeof(msg.mtext), "Simulazione iniziata");
-
-    // Invia il messaggio alla coda di messaggi
-    if (msgsnd(msqid, &msg, sizeof(msg.mtext), 0) == -1) {
-        perror("[ERROR] Master: Impossibile inviare il messaggio di avvio della simulazione");
-        kill(*PID_MASTER, SIGUSR1);
-    
-    }
-
-    printf("[INFO] Master (PID: %d): Messaggio di avvio simulazione inviato\n", getpid());
-}
-
-void receiveStartSimulationMessage(int msqid,int attivatore) {
-    msg_buffer msg;
-    if (msgrcv(msqid, &msg, sizeof(msg.mtext), MSG_TYPE_START_SIM, 0) < 0) {
-        perror("[ERROR] Attivatore: Impossibile ricevere il messaggio di avvio simulazione");
-        exit(EXIT_FAILURE);
-    }
-
-    if(attivatore==1)
-        printf("[INFO] Attivatore (PID: %d): Messaggio ricevuto: %s\n", getpid(), msg.mtext);
-    else
-        printf("[INFO] Alimentazione (PID: %d): Messaggio ricevuto: %s\n", getpid(), msg.mtext);
-}
 
 void waitForNInitMsg(int msqid, int n) {
     msg_buffer rbuf;
@@ -110,4 +82,19 @@ void waitForNInitMsg(int msqid, int n) {
         }
         printf("[MESSRIC] Master (PID: %d) - Message: %s\n", getpid(), rbuf.mtext);
     }
+}
+
+/**
+ * Invia un segnale di inizio simulazione ai processi attivatore e alimentatore.
+ */
+void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid) {
+    if (kill(attivatore_pid, SIGUSR2) == -1) {
+        perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'attivatore");
+        exit(EXIT_FAILURE);
+    }
+    if (kill(alimentazione_pid, SIGUSR2) == -1) {
+        perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'alimentazione");
+        exit(EXIT_FAILURE);
+    }
+    printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a attivatore e alimentazione\n", getpid());
 }

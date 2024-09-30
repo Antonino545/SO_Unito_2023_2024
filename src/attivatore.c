@@ -1,6 +1,6 @@
 #include "lib.h"
 
-int running = 1; // Flag che indica se il processo è in esecuzione
+int running = 0; // Flag che indica se il processo è in esecuzione
 
 
 /**
@@ -11,6 +11,14 @@ void handle_sigint(int sig)
 {
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     running = 0; // Imposta running a 0 per terminare il ciclo di attesa
+}
+/**
+ * Funzione che gestisce il segnale SIGUSR2 per iniziare la simulazione.
+ */
+void handle_start_simulation(int sig) {
+    printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di inizio simulazione (SIGUSR2)\n", getpid());
+    running = 1;
+    // Codice per iniziare la simulazione
 }
 
 int main(int argc, char const *argv[]) {
@@ -31,16 +39,18 @@ int main(int argc, char const *argv[]) {
     sa_int.sa_handler = handle_sigint;
     sigemptyset(&sa_int.sa_mask);
     sigaction(SIGINT, &sa_int, NULL);
-    // quando riceve il segnale sigrurs1 entra nel ciclo
-    receiveStartSimulationMessage(msqid,1);
+    struct sigaction sa_start_simulation;
+    bzero(&sa_start_simulation, sizeof(sa_start_simulation));
+    sa_start_simulation.sa_handler = handle_start_simulation;
+    sigemptyset(&sa_start_simulation.sa_mask);
+    sigaction(SIGUSR2, &sa_start_simulation, NULL);
+    pause(); // Attendi l'arrivo di un segnale
     while (running)
     {
     printf("[INFO] Attivatore (PID: %d): Invio messaggio di scissione agli atomi\n", getpid());
     killpg(*PID_MASTER, SIGUSR2);
-    nanosleep((const struct timespec[]){{0, 500000000L}}, NULL);// Aspetta 0.5 secondi
+    sleep(5);
     }
-    
-
     wait(NULL); // Aspetta che il processo figlio si concluda, se necessario
     exit(EXIT_SUCCESS);
 }
