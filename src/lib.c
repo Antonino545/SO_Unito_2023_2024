@@ -2,7 +2,7 @@
 #include <errno.h>
 
 int *N_ATOMI_INIT; /** Numero iniziale di atomi */
-int *N_ATOM_MAX; /** Numero massimo di atomi */
+int *N_ATOM_MAX; /** Numero massimo del numero atomico dell'atomo */
 int *MIN_N_ATOMICO; /** Numero atomico minimo */
 int *ENERGY_DEMAND; /** Domanda di energia */
 int *STEP; /** Passo per la variazione dell'energia */
@@ -105,10 +105,13 @@ void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid) {
     if (kill(attivatore_pid, SIGUSR2) == -1) {
         perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'attivatore");
         exit(EXIT_FAILURE);
+    }else{
+        printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a attivatore\n", getpid());
     }
     if (kill(alimentazione_pid, SIGUSR2) == -1) {
         perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'alimentazione");
         exit(EXIT_FAILURE);
+    }else{
+        printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
     }
-    printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a attivatore e alimentazione\n", getpid());
 }
