@@ -91,7 +91,7 @@ void waitForNInitMsg(int msqid, int n) {
     msg_buffer rbuf;
     for (int i = 0; i < n; i++) {
         if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), INIT_MSG, 0) < 0) {
-            perror("Errore msgrcv: impossibile ricevere il messaggio");
+            perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
         }
         printf("[MESSRIC] Master (PID: %d) - Message: %s\n", getpid(), rbuf.mtext);

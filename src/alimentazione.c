@@ -12,14 +12,6 @@ void handle_sigint(int sig)
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     running = 0; // Imposta running a 0 per terminare il ciclo di attesa
 }
-/**
- * Funzione che gestisce il segnale SIGUSR2 per iniziare la simulazione.
- */
-void handle_start_simulation(int sig) {
-    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di inizio simulazione (SIGUSR2)\n", getpid());
-    running = 1;
-    // Codice per iniziare la simulazione
-}
 
 /*
  * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
@@ -52,11 +44,7 @@ void setup_signal_handler(){
     sa_int.sa_handler = handle_sigint;
     sigemptyset(&sa_int.sa_mask);
     sigaction(SIGINT, &sa_int, NULL);
-        struct sigaction sa_start_simulation;
-    bzero(&sa_start_simulation, sizeof(sa_start_simulation));
-    sa_start_simulation.sa_handler = handle_start_simulation;
-    sigemptyset(&sa_start_simulation.sa_mask);
-    sigaction(SIGUSR2, &sa_start_simulation, NULL);
+   
 }
 
 int main(int argc, char const *argv[]) {
@@ -75,17 +63,10 @@ int main(int argc, char const *argv[]) {
     }
 
     send_message( msqid,INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
-
-    pause(); // Attendi l'arrivo di un segnale
     while (running)
     {
-        for(int i=0; i<*N_NUOVI_ATOMI; i++){
-        printf("[INFO] Alimentazione (PID: %d): Creazione di un nuovo atomo\n", getpid());
-        createAtomo(); // Crea un nuovo atomo
-        }
-        nanosleep((const struct timespec[]){{1, 0}}, NULL); // Aspetta 1 secondo
+        pause(); // Aspetta un segnale
+        
     }
-    
-    wait(NULL); // Aspetta che il processo figlio si concluda, se necessario
     exit(EXIT_SUCCESS);
 }

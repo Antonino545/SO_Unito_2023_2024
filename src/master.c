@@ -175,7 +175,7 @@ void createAttivatore() {
         }
     } else { // Processo padre
     attivatore_pid=pid;
-        printf("[INFO] Master (PID: %d): Processo attivatore creato con PID: %d\n", getpid(), pid);
+        printf("[INFO] Master (PID: %d): Processo attivatore creato con PID: %d\n", getpid(), attivatore_pid);
     }
 }
 
@@ -199,7 +199,7 @@ void createAlimentazione() {
         }
     } else { // Processo padre
     alimentazione_pid=pid;
-        printf("[INFO] Master (PID: %d): Processo alimentazione creato con PID: %d\n", getpid(), pid);
+    printf("[INFO] Master (PID: %d): Processo alimentazione creato con PID: %d\n", getpid(), alimentazione_pid);
     }
 }
 
@@ -332,11 +332,9 @@ int main() {
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination =0;
-    printf("Attivatore PID: %d\n", attivatore_pid);
-    printf("Alimentazione PID: %d\n", alimentazione_pid);
-    sendStartSimulationSignal(attivatore_pid, alimentazione_pid);
     while (*SIM_DURATION > 0) {
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
+     
        /* if(energy<*ENERGY_DEMAND){
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
             printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
@@ -346,9 +344,11 @@ int main() {
         }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
         (*SIM_DURATION)--;
+
         struct timespec my_time ;
         my_time.tv_sec = 1;
         my_time.tv_nsec = 0;
+        kill(attivatore_pid, SIGUSR1);
         nanosleep(&my_time, NULL);//Uso nanosleep per aspettare un secondo invece di sleep per evitare che il processo venga interrotto da un segnale
         printStats();
     }
