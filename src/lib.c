@@ -65,6 +65,30 @@ void *allocateParametresMemory()
     return shm_ptr;
 }
 
+void *allocateStatisticsMemory()
+{
+    const char *shm_name = "/Statistics"; // Nome della memoria condivisa per le statistiche
+    const size_t shm_size = sizeof(int);  // Supponiamo che serva memorizzare solo un intero (es. energia totale)
+
+    // Apri la memoria condivisa già creata in modalità lettura e scrittura
+    int shm_fd = shm_open(shm_name, O_RDWR, MES_PERM_RW_ALL);
+    if (shm_fd == -1)
+    {
+        perror("[ERROR] Master: Errore durante l'apertura della memoria condivisa per le statistiche (shm_open fallita)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
+    void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (shm_ptr == MAP_FAILED)
+    {
+        perror("[ERROR] Master: Errore durante la mappatura della memoria condivisa per le statistiche (mmap fallita)");
+        exit(EXIT_FAILURE);
+    }
+
+    return shm_ptr; // Restituisce il puntatore alla memoria condivisa
+}
+
 void send_message(int msqid, long type, const char *format, ...)
 {
     msg_buffer message;
@@ -158,5 +182,53 @@ void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid)
     else
     {
         printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
+    }
+}
+
+int getSemaphoreSet()
+{
+
+    int semid = semget(SEMAPHORE_KEY, 1, IPC_CREAT | 0666); // Create a semaphore set with 1 semaphore
+    if (semid == -1)
+    {
+        perror("semget");
+        exit(EXIT_FAILURE);
+    }
+    // Inizializza il semaforo a 1 (semaforo binario)
+    if (semctl(semid, 0, SETVAL, 1) == -1)
+    {
+        perror("semctl");
+        exit(EXIT_FAILURE);
+    }
+
+    return semid;
+}
+
+void removeSemaphoreSet(int semid)
+{
+    if (semctl(semid, 0, IPC_RMID) == -1)
+    {
+        perror("semctl");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void P(int semid)
+{
+    struct sembuf p_op = {0, -1, 0}; // Operazione di wait
+    if (semop(semid, &p_op, 1) == -1)
+    {
+        perror("P operation");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void V(int semid)
+{
+    struct sembuf v_op = {0, 1, 0}; // Operazione di signal
+    if (semop(semid, &v_op, 1) == -1)
+    {
+        perror("V operation");
+        exit(EXIT_FAILURE);
     }
 }

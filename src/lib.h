@@ -13,6 +13,9 @@
 #include <time.h>
 #include <stdarg.h>
 #include <signal.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <semaphore.h>
 
 #define ATOMO_INIT_MSG 1
 #define ATTIVATORE_INIT_MSG 2
@@ -21,6 +24,7 @@
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
 #define MESS_SIZE 128          // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
+#define SEMAPHORE_KEY 12345    // Key dei semafori
 #define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi dell
 
 /*
@@ -92,6 +96,12 @@ void *create_shared_memory(const char *shm_name, size_t shm_size);
 void *allocateParametresMemory();
 
 /**
+ * Funzione che alloca la memoria condivisa per le statistiche.
+ * @return Puntatore alla memoria condivisa per le statistiche.
+ */
+void *allocateStatisticsMemory();
+
+/**
  * Funzione che invia un messaggio formattato al processo master.
  *
  * @param msqid ID della coda di messaggi
@@ -111,5 +121,12 @@ void waitForNInitMsg(int msqid, int n);
  * Funzione che invia un messaggio di inizio simulazione.
  */
 void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid);
-
-#endif // LIB_H
+/**
+ * Funzione per ottenere l'ID del set di semafori.
+ * @return L'ID del set di semafori.
+ */
+int getSemaphoreSet();
+void removeSemaphoreSet(int semid);
+void P(int semid); // Operazione di wait (down)
+void V(int semid); // Operazione di signal (up)
+#endif             // LIB_H

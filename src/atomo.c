@@ -5,10 +5,18 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <sys/sem.h>
 
 int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
 int running = 1;        // Flag che indica se il processo è in esecuzione
+int semid;              // ID del set di semafori
+
+// Struttura per le operazioni sui semafori
+struct sembuf sem_lock = {0, -1, 0};  // Operazione di decremento (lock)
+struct sembuf sem_unlock = {0, 1, 0}; // Operazione di incremento (unlock)
+
+int *energia_totale; // Puntatore alla variabile dell'energia totale liberata
 
 /**
  * Funzione che gestisce la divisione dell'atomo.
@@ -77,7 +85,8 @@ void handle_sigint(int sig)
 }
 
 /**
- * Funzione che calcola l'energia liberata durante la divisione dell'atomo.
+ * Funzione che calcola l'energia liberata durante la divisione dell'atomo
+ * e aggiorna la memoria condivisa delle statistiche in modo sicuro con i semafori.
  *
  * @param n1 Numero atomico del padre
  * @param n2 Numero atomico del figlio
@@ -86,6 +95,25 @@ void handle_sigint(int sig)
 int energialiberata(int n1, int n2)
 {
     int energia_liberata = (n1 * n2) - (n1 > n2 ? n1 : n2); // Formula per calcolare l'energia
+
+    // Blocca l'accesso alla memoria condivisa con il semaforo
+    if (semop(semid, &sem_lock, 1) == -1)
+    {
+        perror("[ERROR] Atomo: semop lock fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    // Aggiorna l'energia totale liberata nella memoria condivisa
+    *energia_totale += energia_liberata;
+    printf("[INFO] Atomo (PID: %d): Energia liberata = %d, Energia totale aggiornata = %d\n", getpid(), energia_liberata, *energia_totale);
+
+    // Rilascia il semaforo
+    if (semop(semid, &sem_unlock, 1) == -1)
+    {
+        perror("[ERROR] Atomo: semop unlock fallito");
+        exit(EXIT_FAILURE);
+    }
+
     return energia_liberata;
 }
 
@@ -102,6 +130,13 @@ int main(int argc, char *argv[])
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
     numero_atomico = atoi(argv[1]);
+
+    // Inizializza memoria condivisa per le statistiche (ad es. energia totale liberata)
+    void *stats_shm_ptr = allocateStatisticsMemory();
+    energia_totale = (int *)(stats_shm_ptr); // Supponiamo che l'energia totale sia all'inizio della memoria condivisa
+
+    // Inizializza i semafori
+    semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori
 
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e gruppo di processi %d\n", getpid(), numero_atomico, getpgrp());
 

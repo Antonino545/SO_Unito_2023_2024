@@ -4,7 +4,7 @@
 /**
  * @file master.c
  * @brief Programma principale per la simulazione di atomi e processi correlati.
- * @author Antonino Incorvaia e Desirée Gaudio
+ * @author Antonino Incorvaia,  Désirée Gaudio
  * Questo programma crea e gestisce processi per simulare atomi, un attivatore e un alimentatore,
  * utilizzando memoria condivisa e una coda di messaggi per la comunicazione tra processi.
  *
@@ -19,29 +19,87 @@
  * Puntatori alle variabili nella memoria condivisa.
  */
 
-Statistiche *statistiche; // Statistiche della simulazione
-int msqid;                /** ID della coda di messaggi */
-pid_t attivatore_pid;     /** PID del processo attivatore */
-pid_t alimentazione_pid;  /** PID del processo alimentazione */
-                          /**
-                           * Funzione che initilizza le statistiche della simulazione.
-                           */
-void initStats()
+Statistiche *statistiche; // Statistiche della simulazione in memoria condivisa
+int msqid;                // ID della coda di messaggi
+int sem_id;               // ID del semaforo
+pid_t attivatore_pid;     // PID del processo attivatore
+pid_t alimentazione_pid;  // PID del processo alimentazione
+
+/**
+ * Funzione per bloccare il semaforo.
+ */
+void semLock(int sem_id)
 {
-    statistiche = malloc(sizeof(*statistiche));
-    if (statistiche == NULL)
+    struct sembuf sb = {0, -1, 0}; // Operazione di lock
+    if (semop(sem_id, &sb, 1) == -1)
     {
-        perror("Failed to allocate memory for statistiche");
+        perror("semop lock");
         exit(EXIT_FAILURE);
     }
-    memset(statistiche, 0, sizeof(Statistiche)); // Inizializza tutte le variabili di statistiche a 0
+}
+
+/**
+ * Funzione per sbloccare il semaforo.
+ */
+void semUnlock(int sem_id)
+{
+    struct sembuf sb = {0, 1, 0}; // Operazione di unlock
+    if (semop(sem_id, &sb, 1) == -1)
+    {
+        perror("semop unlock");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Funzione che inizializza le statistiche nella memoria condivisa e crea il semaforo.
+ */
+void initSharedStats()
+{
+    key_t key = ftok("/tmp", 'S');                                   // Chiave per la memoria condivisa
+    int shm_id = shmget(key, sizeof(Statistiche), IPC_CREAT | 0666); // Crea la memoria condivisa
+
+    if (shm_id == -1)
+    {
+        perror("shmget");
+        exit(EXIT_FAILURE);
+    }
+
+    statistiche = (Statistiche *)shmat(shm_id, NULL, 0); // Mappa la memoria condivisa
+    if (statistiche == (void *)-1)
+    {
+        perror("shmat");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(statistiche, 0, sizeof(Statistiche)); // Inizializza le statistiche a 0
+
+    // Creazione del semaforo
+    key_t sem_key = ftok("/tmp", 'M');
+    sem_id = semget(sem_key, 1, IPC_CREAT | 0666); // Crea un semaforo
+
+    if (sem_id == -1)
+    {
+        perror("semget");
+        exit(EXIT_FAILURE);
+    }
+
+    // Inizializza il semaforo a 1 (disponibile)
+    if (semctl(sem_id, 0, SETVAL, 1) == -1)
+    {
+        perror("semctl");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /**
  * Stampa le statistiche della simulazione.
+ * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
  */
 void printStats()
 {
+    semLock(sem_id); // Blocco del semaforo
+
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
     printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), statistiche->Nattivazioni.totale);
     printf("[INFO] Master (PID: %d): Attivazioni ultimo secondo: %d\n", getpid(), statistiche->Nattivazioni.ultimo_secondo);
@@ -53,10 +111,34 @@ void printStats()
     printf("[INFO] Master (PID: %d): Energia consumata ultimo secondo: %d\n", getpid(), statistiche->energia_consumata.ultimo_secondo);
     printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), statistiche->scorie_prodotte.totale);
     printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), statistiche->scorie_prodotte.ultimo_secondo);
+
+    semUnlock(sem_id); // Sblocco del semaforo
 }
 
 /**
- * Funzione di pulizia che gestisce la terminazione dei processi e la rimozione delle risorse.
+ * Funzione per aggiornare le statistiche, protetta da semafori.
+ * Gli altri processi chiameranno questa funzione per aggiornare i dati.
+ */
+void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
+{
+    semLock(sem_id); // Blocco del semaforo
+
+    statistiche->Nattivazioni.totale += attivazioni;
+    statistiche->Nattivazioni.ultimo_secondo = attivazioni;
+    statistiche->Nscissioni.totale += scissioni;
+    statistiche->Nscissioni.ultimo_secondo = scissioni;
+    statistiche->energia_prodotta.totale += energia_prod;
+    statistiche->energia_prodotta.ultimo_secondo = energia_prod;
+    statistiche->energia_consumata.totale += energia_cons;
+    statistiche->energia_consumata.ultimo_secondo = energia_cons;
+    statistiche->scorie_prodotte.totale += scorie;
+    statistiche->scorie_prodotte.ultimo_secondo = scorie;
+
+    semUnlock(sem_id); // Sblocco del semaforo
+}
+
+/**
+ * Funzione di pulizia che rimuove il semaforo e la memoria condivisa.
  */
 void cleanup()
 {
@@ -68,22 +150,23 @@ void cleanup()
     // Attende la terminazione di tutti i processi figli
     while (wait(NULL) != -1)
         ;
-    const char *shm_name = "/Parametres";
-    // Pulizia della memoria condivisa
-    printf("[CLEANUP] Master (PID: %d): Inizio pulizia della memoria condivisa\n", getpid());
-    if (shm_unlink(shm_name) == -1)
+
+    // Rimozione del semaforo
+    if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
-        perror("[ERROR] Master: Errore durante la pulizia della memoria condivisa (shm_unlink fallita)");
-    }
-    else
-    {
-        printf("[CLEANUP] Master (PID: %d): Memoria condivisa pulita con successo\n", getpid());
+        perror("[ERROR] Master: Errore durante la rimozione del semaforo");
     }
 
-    // Rimuove la coda di messaggi
+    // Rimozione della memoria condivisa
+    if (shmctl(shmget(ftok("/tmp", 'S'), sizeof(Statistiche), 0666), IPC_RMID, NULL) == -1)
+    {
+        perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa");
+    }
+
+    // Rimozione della coda di messaggi
     if (msgctl(msqid, IPC_RMID, NULL) < 0)
     {
-        perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi (msgctl fallita)");
+        perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi");
     }
 }
 
@@ -378,7 +461,7 @@ int main()
     createAttivatore();
     waitForNInitMsg(msqid, 1);
     printf("---------------------------------------\n");
-    initStats(); // Inizializza le statistiche della simulazione
+    initSharedStats(); // Inizializza le statistiche della simulazione
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination = 0;
