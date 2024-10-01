@@ -6,9 +6,9 @@
 #include <string.h>
 #include <time.h>
 
-int msqid; // ID della coda di messaggi
+int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
-int running = 1; // Flag che indica se il processo è in esecuzione
+int running = 1;        // Flag che indica se il processo è in esecuzione
 
 /**
  * Funzione che gestisce la divisione dell'atomo.
@@ -16,11 +16,11 @@ int running = 1; // Flag che indica se il processo è in esecuzione
  */
 void handle_scissione(int sig)
 {
-    srand(time(NULL) ^ getpid()); // Inizializza il seed del numero casuale con il tempo e il PID
+    srand(time(NULL) ^ getpid());   // Inizializza il seed del numero casuale con il tempo e il PID
     int probabilita = rand() % 100; // Genera un numero tra 0 e 99
 
     if (probabilita < 20)
-    { 
+    {
         int numero_atomico_figlio = generate_random(numero_atomico);
         numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre
         printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
@@ -29,7 +29,7 @@ void handle_scissione(int sig)
         if (numero_atomico < *MIN_N_ATOMICO)
         {
             printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
-            send_message(msqid, INIT_MSG, "[INFO] Atomo (PID: %d): Atomo terminato", getpid());
+            send_message(msqid, TERMINATION_MSG, "[INFO] Atomo (PID: %d): Atomo terminato", getpid());
             exit(EXIT_SUCCESS);
         }
 
@@ -41,7 +41,7 @@ void handle_scissione(int sig)
         {
             // Processo figlio: rappresenta il nuovo atomo creato dalla scissione
             printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
-            
+
             // Converte il numero atomico in stringa e avvia il nuovo processo atomo
             char num_atomico_str[20];
             snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio);
@@ -53,14 +53,17 @@ void handle_scissione(int sig)
                 exit(EXIT_FAILURE);
             }
         }
-        if (pid < 0) {
-        perror("[ERROR] Atomo: Fork fallita durante la divisione di un atomo");
-        kill(*PID_MASTER, SIGUSR1);
-    }else{
-        //il padre aspetta il messaggio di inizializzazione del figlio
-        waitForNInitMsg(msqid, 1);
+        if (pid < 0)
+        {
+            perror("[ERROR] Atomo: Fork fallita durante la divisione di un atomo");
+            kill(*PID_MASTER, SIGUSR1);
+        }
+        else
+        {
+            // il padre aspetta il messaggio di inizializzazione del figlio
+            waitForNInitMsg(msqid, 1);
+        }
     }
-    } 
 }
 
 /**
@@ -75,7 +78,7 @@ void handle_sigint(int sig)
 
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo.
- * 
+ *
  * @param n1 Numero atomico del padre
  * @param n2 Numero atomico del figlio
  * @return Energia liberata
@@ -95,12 +98,12 @@ int main(int argc, char *argv[])
     }
 
     // Inizializza memoria condivisa e recupera parametri
-    void *shm_ptr = allocateParametresMemory();         
+    void *shm_ptr = allocateParametresMemory();
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
-    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));    
+    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
     numero_atomico = atoi(argv[1]);
 
-    printf("[INFO] Atomo (PID: %d): Creato con numero atomico %d e gruppo di processi %d\n", getpid(), numero_atomico, getpgrp());
+    printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e gruppo di processi %d\n", getpid(), numero_atomico, getpgrp());
 
     // Ottieni l'ID della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
@@ -124,14 +127,15 @@ int main(int argc, char *argv[])
     sigaction(SIGTERM, &sa_int, NULL);
 
     // Notifica al master che l'inizializzazione è completata
-    send_message(msqid, INIT_MSG, "[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
-    
-    if (setpgid(getpid(), *PID_MASTER) == -1){
+    send_message(msqid, ATOMO_INIT_MSG, "[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
+
+    if (setpgid(getpid(), *PID_MASTER) == -1)
+    {
         printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-        running = 0;    
-        }
-        printf("[INFO] Atomo (PID: %d): In attesa di messaggi di scissione o terminazione\n", getpid());
+        running = 0;
+    }
+    printf("[INFO] Atomo (PID: %d): In attesa di messaggi di scissione o terminazione\n", getpid());
 
     // Ciclo principale di attesa
     while (running)

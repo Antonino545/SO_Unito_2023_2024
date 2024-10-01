@@ -12,19 +12,23 @@
 #include <sys/msg.h>
 #include <time.h>
 #include <stdarg.h>
-#include  <signal.h>
+#include <signal.h>
 
-#define INIT_MSG 1// Tipo di messaggio per l'inizializzazione che e di tipo 1
-#define MSG_TYPE_START_SIM 2 // Tipo di messaggio per l'inizio della simulazione
-#define MESS_SIZE 128 // Dimensione massima del messaggio
-#define MESSAGE_QUEUE_KEY 1234 //Key della coda di messaggi 
-#define MES_PERM_RW_ALL 0666 //Permessi di lettura e scrittura per tutti i processi dell
+#define ATOMO_INIT_MSG 1
+#define ATTIVATORE_INIT_MSG 2
+#define ALIMENTAZIONE_INIT_MSG 3
+#define TERMINATION_MSG 4      // Tipo di messaggio per la terminazione dell'atomo
+#define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
+#define MESS_SIZE 128          // Dimensione massima del messaggio
+#define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
+#define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi dell
 
 /*
     * Struttura del messaggio.
-    
+
 */
-typedef struct {
+typedef struct
+{
     long mtype;
     char mtext[MESS_SIZE];
 } msg_buffer;
@@ -32,38 +36,41 @@ typedef struct {
 /**
  * Struttura del messaggio contenente l'informazione dell'atomo.
  */
-typedef struct {
+typedef struct
+{
     int n_atom; /**< Numero atomico dell'atomo */
-    pid_t pid; /**< PID del processo creato */
+    pid_t pid;  /**< PID del processo creato */
 } atom;
 /**
  * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.
  */
-typedef struct {
-    int totale;       // Valore totale
+typedef struct
+{
+    int totale;         // Valore totale
     int ultimo_secondo; // Valore relativo all'ultimo secondo
 } Statistica;
 // Struttura per le statistiche della simulazione
-typedef struct {
-    Statistica Nattivazioni;     // Numero di attivazioni
-    Statistica Nscissioni;       // Numero di scissioni
-    Statistica energia_prodotta; // Quantità di energia prodotta
+typedef struct
+{
+    Statistica Nattivazioni;      // Numero di attivazioni
+    Statistica Nscissioni;        // Numero di scissioni
+    Statistica energia_prodotta;  // Quantità di energia prodotta
     Statistica energia_consumata; // Quantità di energia consumata
-    Statistica scorie_prodotte;  // Quantità di scorie prodotte
+    Statistica scorie_prodotte;   // Quantità di scorie prodotte
 } Statistiche;
 
-extern int *N_ATOMI_INIT; /** Numero iniziale di atomi */
-extern int *N_ATOM_MAX; /** Numero massimo di atomi */
-extern int *MIN_N_ATOMICO; /** Numero atomico minimo */
-extern int *ENERGY_DEMAND; /** Domanda di energia */
-extern int *STEP; /** Passo per la variazione dell'energia */
-extern int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
-extern int *SIM_DURATION; /** Durata della simulazione */
+extern int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
+extern int *N_ATOM_MAX;               /** Numero massimo di atomi */
+extern int *MIN_N_ATOMICO;            /** Numero atomico minimo */
+extern int *ENERGY_DEMAND;            /** Domanda di energia */
+extern int *STEP;                     /** Passo per la variazione dell'energia */
+extern int *N_NUOVI_ATOMI;            /** Numero di nuovi atomi */
+extern int *SIM_DURATION;             /** Durata della simulazione */
 extern int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
-extern int *PID_MASTER; /** PID del processo master */
+extern int *PID_MASTER;               /** PID del processo master */
 
 /**
- * Genera un numero casuale tra 1 e `max`. 
+ * Genera un numero casuale tra 1 e `max`.
  * @param max Il valore massimo che può essere generato.
  */
 int generate_random(int max);
@@ -77,12 +84,12 @@ int generate_random(int max);
  * @param shm_size Dimensione della memoria condivisa.
  * @return Puntatore alla memoria condivisa.
  */
-void* create_shared_memory(const char *shm_name, size_t shm_size);
+void *create_shared_memory(const char *shm_name, size_t shm_size);
 
 /**
  * Funzione che imposta la memoria condivisa per i parametri.
  */
-void* allocateParametresMemory();
+void *allocateParametresMemory();
 
 /**
  * Funzione che invia un messaggio formattato al processo master.
@@ -92,18 +99,17 @@ void* allocateParametresMemory();
  * @param type Tipo del messaggio
  * @param ... Argomenti variabili per il formato
  */
-void send_message(int msqid,long type, const char *format, ...);
-
+void send_message(int msqid, long type, const char *format, ...);
 
 /**
  * Funzione che attende un messaggio di inizializzazione da un processo.
- * 
+ *
  * @param msqid ID della coda di messaggi
  */
-void waitForNInitMsg(int msqid, int n) ;
+void waitForNInitMsg(int msqid, int n);
 /**
  * Funzione che invia un messaggio di inizio simulazione.
  */
-void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid) ;
+void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid);
 
 #endif // LIB_H

@@ -1,37 +1,42 @@
 #include "lib.h"
 #include <errno.h>
 
-int *N_ATOMI_INIT; /** Numero iniziale di atomi */
-int *N_ATOM_MAX; /** Numero massimo del numero atomico dell'atomo */
-int *MIN_N_ATOMICO; /** Numero atomico minimo */
-int *ENERGY_DEMAND; /** Domanda di energia */
-int *STEP; /** Passo per la variazione dell'energia */
-int *N_NUOVI_ATOMI; /** Numero di nuovi atomi */
-int *SIM_DURATION; /** Durata della simulazione */
+int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
+int *N_ATOM_MAX;               /** Numero massimo del numero atomico dell'atomo */
+int *MIN_N_ATOMICO;            /** Numero atomico minimo */
+int *ENERGY_DEMAND;            /** Domanda di energia */
+int *STEP;                     /** Passo per la variazione dell'energia */
+int *N_NUOVI_ATOMI;            /** Numero di nuovi atomi */
+int *SIM_DURATION;             /** Durata della simulazione */
 int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
-int *PID_MASTER; /** PID del processo master */
-int *ATOMO_GPID; /** Gruppo di processi degli atomi */
-int generate_random(int max) {
+int *PID_MASTER;               /** PID del processo master */
+int *ATOMO_GPID;               /** Gruppo di processi degli atomi */
+int generate_random(int max)
+{
     return rand() % max + 1; // Restituisce un numero tra 1 e max
 }
 
-void* create_shared_memory(const char *shm_name, size_t shm_size) {
+void *create_shared_memory(const char *shm_name, size_t shm_size)
+{
     // Crea o apre una memoria condivisa
     int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, MES_PERM_RW_ALL);
-    if (shm_fd == -1) {
+    if (shm_fd == -1)
+    {
         perror("[ERROR] Master: Errore durante la creazione della memoria condivisa (shm_open fallita)");
         exit(EXIT_FAILURE);
     }
 
     // Imposta la dimensione della memoria condivisa
-    if (ftruncate(shm_fd, shm_size) == -1) {
+    if (ftruncate(shm_fd, shm_size) == -1)
+    {
         perror("[ERROR] Master: Impossibile impostare la dimensione della memoria condivisa (ftruncate fallita)");
         exit(EXIT_FAILURE);
     }
 
     // Mappa la memoria condivisa nel proprio spazio degli indirizzi
     void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shm_ptr == MAP_FAILED) {
+    if (shm_ptr == MAP_FAILED)
+    {
         perror("[ERROR] Master: Errore durante la mappatura della memoria condivisa (mmap fallita)");
         exit(EXIT_FAILURE);
     }
@@ -39,28 +44,41 @@ void* create_shared_memory(const char *shm_name, size_t shm_size) {
     return shm_ptr;
 }
 
-void* allocateParametresMemory() {
+void *allocateParametresMemory()
+{
     const char *shm_name = "/Parametres";
     const size_t shm_size = 8 * sizeof(int); // 8 interi
 
     int shm_fd = shm_open(shm_name, O_RDWR, MES_PERM_RW_ALL); // Apre la memoria condivisa in lettura e scrittura che è già stata creata
-    if (shm_fd == -1) {
+    if (shm_fd == -1)
+    {
         perror("Errore nella shm_open");
         exit(EXIT_FAILURE);
     }
 
     void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shm_ptr == MAP_FAILED) {
+    if (shm_ptr == MAP_FAILED)
+    {
         perror("Errore nella mmap");
         exit(EXIT_FAILURE);
     }
     return shm_ptr;
 }
 
-void send_message(int msqid, long type, const char *format, ...) {
+void send_message(int msqid, long type, const char *format, ...)
+{
     msg_buffer message;
     message.mtype = type;
-    snprintf(message.mtext, sizeof(message.mtext), "%s", format);
+
+    // Inizializza gli argomenti variabili
+    va_list args;
+    va_start(args, format);
+
+    // Usa vsnprintf per formattare il messaggio
+    vsnprintf(message.mtext, sizeof(message.mtext), format, args);
+
+    // Termina l'uso degli argomenti variabili
+    va_end(args);
 
     int attempts = 0;
     while (msgsnd(msqid, &message, sizeof(message.mtext), IPC_NOWAIT) == -1)
@@ -86,32 +104,59 @@ void send_message(int msqid, long type, const char *format, ...) {
     }
 }
 
-
-void waitForNInitMsg(int msqid, int n) {
+void waitForNInitMsg(int msqid, int n)
+{
     msg_buffer rbuf;
-    for (int i = 0; i < n; i++) {
-        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), INIT_MSG, 0) < 0) {
+    for (int i = 0; i < n; i++)
+    {
+        // Receive any message
+        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 0, 0) < 0)
+        {
             perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
         }
-        printf("[MESSRIC] Master (PID: %d) - Message: %s\n", getpid(), rbuf.mtext);
+
+        // Display the correct message based on the type
+        if (rbuf.mtype == ATOMO_INIT_MSG)
+        {
+            printf("[MESSRIC] Master (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
+        }
+        else if (rbuf.mtype == ATTIVATORE_INIT_MSG)
+        {
+            printf("[MESSRIC] Master (PID: %d) - Message from Attivatore: %s\n", getpid(), rbuf.mtext);
+        }
+        else if (rbuf.mtype == ALIMENTAZIONE_INIT_MSG)
+        {
+            printf("[MESSRIC] Master (PID: %d) - Message from Alimentazione: %s\n", getpid(), rbuf.mtext);
+        }
+        else
+        {
+            printf("[MESSRIC] Master (PID: %d) - Message from Unknown Sender: %s\n", getpid(), rbuf.mtext);
+        }
     }
 }
 
 /**
  * Invia un segnale di inizio simulazione ai processi attivatore e alimentatore.
  */
-void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid) {
-    if (kill(attivatore_pid, SIGUSR2) == -1) {
+void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid)
+{
+    if (kill(attivatore_pid, SIGUSR2) == -1)
+    {
         perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'attivatore");
         exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a attivatore\n", getpid());
     }
-    if (kill(alimentazione_pid, SIGUSR2) == -1) {
+    if (kill(alimentazione_pid, SIGUSR2) == -1)
+    {
         perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'alimentazione");
         exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
     }
 }
