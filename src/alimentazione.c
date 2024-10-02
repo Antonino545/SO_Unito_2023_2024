@@ -1,11 +1,8 @@
 #include "lib.h"
 
-int running = 1; // Flag che indica se il processo è in esecuzione
+int running = 0; // Flag che indica se il processo è in esecuzione
 int msqid;       // ID della coda di messaggi
 
-/*
- * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
- */
 void createAtomo()
 {
     int numero_atomico = generate_random(*N_ATOM_MAX);
@@ -29,69 +26,55 @@ void createAtomo()
     }
     else
     {
-        // il padre aspetta il messaggio di inizializzazione del figlio
         waitForNInitMsg(msqid, 1);
     }
 }
 
-/**
- * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
- * Cambia lo stato della variabile "running" per uscire dal ciclo di attesa.
- */
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    running = 0; // Imposta running a 0 per terminare il ciclo di attesa
+    running = 0;
 }
-/**
- * Funzione che gestisce il segnale SIGUSR1 per iniziare la scissione.
- */
+
 void handle_createAtomo(int sig)
 {
-    (void)sig; // Suppresses unused parameter warning
-    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di creazione di un atomo (SIGUSR1)\n", getpid());
-    for(int i = 0; i < *N_NUOVI_ATOMI; i++){
-        createAtomo();
-    }
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di creazione di nuovi atomi (SIGUSR1)\n", getpid());
+running=1;
 }
 
 void setup_signal_handler()
 {
+    struct sigaction interrupt_sa;
+    interrupt_sa.sa_handler = handle_sigint;
+    sigemptyset(&interrupt_sa.sa_mask);
+    sigaction(SIGINT, &interrupt_sa, NULL);
 
-    struct sigaction sa_int;
-    bzero(&sa_int, sizeof(sa_int));
-    sa_int.sa_handler = handle_sigint;
-    sigemptyset(&sa_int.sa_mask);
-    sigaction(SIGINT, &sa_int, NULL);
-    struct sigaction sa_usr1;
-    bzero(&sa_usr1, sizeof(sa_usr1));
-    sa_usr1.sa_handler = handle_createAtomo;
-    sigemptyset(&sa_usr1.sa_mask);
-    sigaction(SIGUSR1, &sa_usr1, NULL);
+    struct sigaction sa2;
+    sa2.sa_handler = handle_createAtomo;
+    sigemptyset(&sa2.sa_mask);
+    sigaction(SIGUSR1, &sa2, NULL);  // Cambia SIGUSR2 in SIGUSR1 per essere coerente con il tuo codice
 }
-
 
 
 int main(int argc, char const *argv[])
 {
     printf("[INFO] Alimentazione: Sono stato appena creato\n");
 
-    void *shm_ptr = allocateParametresMemory(); // Inizializza la memoria condivisa
+    void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
     {
         perror("[ERROR] Alimentazione: Allocazione memoria condivisa fallita");
         exit(EXIT_FAILURE);
     }
 
-    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));    // Recupera il PID del processo master dalla memoria condivisa
-    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int)); // Recupera il valore di MIN_N_ATOMICO dalla memoria condivisa
-    N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));    // Recupera il valore di N_ATOM_MAX dalla memoria condivisa
-    N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int)); // Recupera il numero di nuovi atomi dalla memoria condivisa
+    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
+    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
+    N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
+    N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
 
-    setup_signal_handler(); // Imposta il gestore del segnale per il SIGINT
+    setup_signal_handler();
 
-    // Invia un messaggio al master
     key_t key = MESSAGE_QUEUE_KEY;
     if ((msqid = msgget(key, MES_PERM_RW_ALL)) < 0)
     {
@@ -100,10 +83,17 @@ int main(int argc, char const *argv[])
     }
 
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
-
-    while (running)
+    pause();
+    while(running)
     {
-        pause(); // Aspetta un segnale
+        for(int i = 0; i < *N_NUOVI_ATOMI; i++)
+        {
+            createAtomo();
+        }
+        struct timespec step;
+        step.tv_sec = 0;
+        step.tv_nsec = *STEP;
+        nanosleep(&step, NULL);//ogni step nano secondi crea nnuovi atomi
     }
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);

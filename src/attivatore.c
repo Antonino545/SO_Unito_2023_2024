@@ -1,73 +1,108 @@
 #include "lib.h"
 
-int running = 1; // Flag che indica se il processo è in esecuzione
+int running = 0; // Flag che indica se il processo è in esecuzione
+int msqid;       // ID della coda di messaggi
 
-/**
- * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
- */
+void createAtomo()
+{
+    int numero_atomico = generate_random(*N_ATOM_MAX);
+    char num_atomico_str[20];
+    snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
+
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        perror("[ERROR] Alimentatore: Fork fallita durante la creazione di un atomo");
+        kill(*PID_MASTER, SIGUSR1);
+    }
+    else if (pid == 0)
+    {
+        printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
+        if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
+        {
+            perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        waitForNInitMsg(msqid, 1);
+    }
+}
+
 void handle_sigint(int sig)
 {
-    printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    running = 0; // Imposta running a 0 per terminare il ciclo di attesa
+    (void)sig; // Suppresses unused parameter warning
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+    running = 0; // Imposta running a 0 per terminare il ciclo
 }
 
-/**
- * Funzione che gestisce il segnale SIGUSR1 per iniziare la scissione.
- */
-void handle_inizia_Messaggi_scissione(int sig)
+void handle_createAtomo(int sig)
 {
-    printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di inizio scissione (SIGUSR1)\n", getpid());
-    killpg(*PID_MASTER, SIGUSR2); // Invia SIGUSR2 a tutti i processi nel gruppo
-    
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di creazione di nuovi atomi (SIGUSR1)\n", getpid());
+    running = 1; // Imposta running a 1 per iniziare a generare atomi
+
+    // Inizio immediato del ciclo di generazione atomi
+    while (running)
+    {
+        for (int i = 0; i < *N_NUOVI_ATOMI; i++)
+        {
+            createAtomo();
+        }
+
+        struct timespec step;
+        step.tv_sec = 0;
+        step.tv_nsec = *STEP;
+        nanosleep(&step, NULL); // Ogni step nanosecondi crea nuovi atomi
+    }
 }
 
-/**
- * Configura il gestore per i segnali specificati.
- */
-void setup_signal_handlers()
+void setup_signal_handler()
 {
-    struct sigaction sa;
-    sa.sa_flags = 0; // Nessun flag
-    sigemptyset(&sa.sa_mask);
+    struct sigaction interrupt_sa;
+    interrupt_sa.sa_handler = handle_sigint;
+    sigemptyset(&interrupt_sa.sa_mask);
+    sigaction(SIGINT, &interrupt_sa, NULL);
 
-    // Gestione SIGINT
-    sa.sa_handler = handle_sigint;
-    sigaction(SIGINT, &sa, NULL);
-
-    // Gestione SIGUSR1
-    sa.sa_handler = handle_inizia_Messaggi_scissione;
-    sigaction(SIGUSR1, &sa, NULL);
+    struct sigaction sa2;
+    sa2.sa_handler = handle_createAtomo;
+    sigemptyset(&sa2.sa_mask);
+    sigaction(SIGUSR1, &sa2, NULL);  // Assicurati che il segnale giusto sia utilizzato
 }
 
 int main(int argc, char const *argv[])
 {
-    // Ottieni l'ID della coda di messaggi
-    key_t key = MESSAGE_QUEUE_KEY;
-    int msqid = msgget(key, MES_PERM_RW_ALL);
-    if (msqid < 0)
-    {
-        perror("msgget");
-        exit(EXIT_FAILURE);
-    }
+    printf("[INFO] Alimentazione: Sono stato appena creato\n");
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
     {
-        perror("Failed to allocate shared memory");
+        perror("[ERROR] Alimentazione: Allocazione memoria condivisa fallita");
         exit(EXIT_FAILURE);
     }
 
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
-    
-    send_message(msqid, ATTIVATORE_INIT_MSG, "[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
+    MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
+    N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
+    N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
 
+    setup_signal_handler();
 
-
-    // Ciclo di attesa per i segnali
-    while (running)
+    key_t key = MESSAGE_QUEUE_KEY;
+    if ((msqid = msgget(key, MES_PERM_RW_ALL)) < 0)
     {
-        pause(); // Aspetta un segnale
+        perror("msgget");
+        exit(1);
     }
-    printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
+
+    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
+    
+    // Aspetta un segnale prima di iniziare a generare
+    while (1)
+    {
+        pause(); // Aspetta che arrivi un segnale
+    }
+
+    printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
