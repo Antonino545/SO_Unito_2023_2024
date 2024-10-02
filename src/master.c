@@ -114,8 +114,8 @@ void cleanup()
 {
     printf("------------------------------------------------------------\n");
     printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
-    kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
+    
     killpg(getpid(), SIGTERM);       // Invia il segnale di terminazione a tutti i processi figli
 
     // Attende la terminazione di tutti i processi figli
@@ -461,15 +461,7 @@ int main()
 
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
-    if( kill(alimentazione_pid, SIGUSR1) == -1)
-    {
-        perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'alimentazione");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
-    }
+
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
@@ -483,10 +475,7 @@ int main()
          }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
         (*SIM_DURATION)--;
-        struct timespec my_time;
-        my_time.tv_sec = 1;
-        my_time.tv_nsec = 0;
-        nanosleep(&my_time, NULL); // Uso nanosleep per aspettare un secondo invece di sleep per evitare che il processo venga interrotto da un segnale
+        nanosleep((const struct timespec[]){{1, 0}}, NULL);// Ogni secondo
         printStats();
     }
     cleanup();

@@ -1,6 +1,5 @@
 #include "lib.h"
 
-int running = 0; // Flag che indica se il processo è in esecuzione
 int msqid;       // ID della coda di messaggi
 
 void createAtomo()
@@ -26,7 +25,14 @@ void createAtomo()
     }
     else
     {
-        waitForNInitMsg(msqid, 1);
+            msg_buffer rbuf;
+
+       if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 0, 0) < 0)
+        {
+            perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
+            exit(EXIT_FAILURE);
+        }
+        printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
 
@@ -34,26 +40,15 @@ void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    running = 0;
+   printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
+    exit(EXIT_SUCCESS);
 }
-
-void handle_createAtomo(int sig)
-{
-    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di creazione di nuovi atomi (SIGUSR1)\n", getpid());
-running=1;
-}
-
 void setup_signal_handler()
 {
     struct sigaction interrupt_sa;
     interrupt_sa.sa_handler = handle_sigint;
     sigemptyset(&interrupt_sa.sa_mask);
     sigaction(SIGINT, &interrupt_sa, NULL);
-
-    struct sigaction sa2;
-    sa2.sa_handler = handle_createAtomo;
-    sigemptyset(&sa2.sa_mask);
-    sigaction(SIGUSR1, &sa2, NULL);  // Cambia SIGUSR2 in SIGUSR1 per essere coerente con il tuo codice
 }
 
 
@@ -83,8 +78,7 @@ int main(int argc, char const *argv[])
     }
 
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
-    pause();
-    while(running)
+    for(;;)
     {
         for(int i = 0; i < *N_NUOVI_ATOMI; i++)
         {
@@ -95,6 +89,5 @@ int main(int argc, char const *argv[])
         step.tv_nsec = *STEP;
         nanosleep(&step, NULL);//ogni step nano secondi crea nnuovi atomi
     }
-    printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
-    exit(EXIT_SUCCESS);
+    exit(EXIT_FAILURE);
 }
