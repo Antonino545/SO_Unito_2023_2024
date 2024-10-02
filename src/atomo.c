@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     // Inizializza i semafori
     semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori
 
-    printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e gruppo di processi %d\n", getpid(), numero_atomico, getpgrp());
+    printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d)\n", getpid(), numero_atomico, getpgrp());
 
     // Ottieni l'ID della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     sigaction(SIGTERM, &sa_int, NULL);
 
     // Notifica al master che l'inizializzazione è completata
-    send_message(msqid, ATOMO_INIT_MSG, "[INFO] Atomo (PID: %d): Inizializzazione completata", getpid());
+    send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
 
     if (setpgid(getpid(), *PID_MASTER) == -1)
     {

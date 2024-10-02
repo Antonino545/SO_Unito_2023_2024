@@ -77,7 +77,7 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
-    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
+    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
     for(;;)
     {
         for(int i = 0; i < *N_NUOVI_ATOMI; i++)

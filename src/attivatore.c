@@ -95,7 +95,7 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
-    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "[INFO] Alimentazione (PID: %d): Inizializzazione completata", getpid());
+    send_message(msqid,ATTIVATORE_INIT_MSG , "Inizializzazione completata", getpid());
     
     // Aspetta un segnale prima di iniziare a generare
     while (1)

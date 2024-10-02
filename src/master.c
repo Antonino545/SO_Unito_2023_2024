@@ -115,7 +115,7 @@ void cleanup()
     printf("------------------------------------------------------------\n");
     printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
-    
+
     killpg(getpid(), SIGTERM);       // Invia il segnale di terminazione a tutti i processi figli
 
     // Attende la terminazione di tutti i processi figli
@@ -214,9 +214,7 @@ void createAtomo()
             exit(EXIT_FAILURE);
         }
     }
-    else
-    {
-    }
+
 }
 /**
  * Crea un nuovo processo figlio per eseguire il programma `attivatore`.
@@ -446,15 +444,16 @@ int main()
 
     printf("[INFO] Master (PID: %d): Fine creazione atomi iniziali\n", getpid());
     printf("---------------------------------------\n");
+    printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
+    createAttivatore();
+    waitForNInitMsg(msqid, 1);
+    printf("---------------------------------------\n");
     // Creazione dei processi necessari
     printf("[INFO] Master (PID: %d): Creazione del processo alimentatore\n", getpid());
     createAlimentazione();
     waitForNInitMsg(msqid, 1);
     printf("---------------------------------------\n");
-    printf("[INFO] Master (PID: %d): Creazione del processo attivatore\n", getpid());
-    createAttivatore();
-    waitForNInitMsg(msqid, 1);
-    printf("---------------------------------------\n");
+   
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination = 0;
