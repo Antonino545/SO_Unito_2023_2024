@@ -19,7 +19,7 @@
  * Puntatori alle variabili nella memoria condivisa.
  */
 
-Statistiche *statistiche; // Statistiche della simulazione in memoria condivisa
+Statistiche *stats; // Statistiche della simulazione in memoria condivisa
 int msqid;                // ID della coda di messaggi
 int sem_id;               // ID del semaforo
 pid_t attivatore_pid;     // PID del processo attivatore
@@ -57,7 +57,7 @@ void semUnlock(int sem_id)
  */
 void printStats()
 {
-    if (statistiche == NULL)
+    if (stats == NULL)
     {
         fprintf(stderr, "[ERROR] statistiche pointer is NULL in printStats\n");
         exit(EXIT_FAILURE);
@@ -65,22 +65,22 @@ void printStats()
 
     // Now, check if the fields inside statistiche are initialized
     printf("[DEBUG] statistiche initialized: Nattivazioni: %d, Nscissioni: %d\n",
-           statistiche->Nattivazioni.totale,
-           statistiche->Nscissioni.totale);
+           stats->Nattivazioni.totale,
+           stats->Nscissioni.totale);
 
     semLock(sem_id); // Blocco del semaforo
 
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
-    printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), statistiche->Nattivazioni.totale);
-    printf("[INFO] Master (PID: %d): Attivazioni ultimo secondo: %d\n", getpid(), statistiche->Nattivazioni.ultimo_secondo);
-    printf("[INFO] Master (PID: %d): Scissioni totali: %d\n", getpid(), statistiche->Nscissioni.totale);
-    printf("[INFO] Master (PID: %d): Scissioni ultimo secondo: %d\n", getpid(), statistiche->Nscissioni.ultimo_secondo);
-    printf("[INFO] Master (PID: %d): Energia prodotta totale: %d\n", getpid(), statistiche->energia_prodotta.totale);
-    printf("[INFO] Master (PID: %d): Energia prodotta ultimo secondo: %d\n", getpid(), statistiche->energia_prodotta.ultimo_secondo);
-    printf("[INFO] Master (PID: %d): Energia consumata totale: %d\n", getpid(), statistiche->energia_consumata.totale);
-    printf("[INFO] Master (PID: %d): Energia consumata ultimo secondo: %d\n", getpid(), statistiche->energia_consumata.ultimo_secondo);
-    printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), statistiche->scorie_prodotte.totale);
-    printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), statistiche->scorie_prodotte.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), stats->Nattivazioni.totale);
+    printf("[INFO] Master (PID: %d): Attivazioni ultimo secondo: %d\n", getpid(), stats->Nattivazioni.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Scissioni totali: %d\n", getpid(), stats->Nscissioni.totale);
+    printf("[INFO] Master (PID: %d): Scissioni ultimo secondo: %d\n", getpid(), stats->Nscissioni.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Energia prodotta totale: %d\n", getpid(), stats->energia_prodotta.totale);
+    printf("[INFO] Master (PID: %d): Energia prodotta ultimo secondo: %d\n", getpid(), stats->energia_prodotta.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Energia consumata totale: %d\n", getpid(), stats->energia_consumata.totale);
+    printf("[INFO] Master (PID: %d): Energia consumata ultimo secondo: %d\n", getpid(), stats->energia_consumata.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), stats->scorie_prodotte.totale);
+    printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), stats->scorie_prodotte.ultimo_secondo);
 
     semUnlock(sem_id); // Sblocco del semaforo
 }
@@ -93,16 +93,16 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
 {
     semLock(sem_id); // Blocco del semaforo
 
-    statistiche->Nattivazioni.totale += attivazioni;
-    statistiche->Nattivazioni.ultimo_secondo = attivazioni;
-    statistiche->Nscissioni.totale += scissioni;
-    statistiche->Nscissioni.ultimo_secondo = scissioni;
-    statistiche->energia_prodotta.totale += energia_prod;
-    statistiche->energia_prodotta.ultimo_secondo = energia_prod;
-    statistiche->energia_consumata.totale += energia_cons;
-    statistiche->energia_consumata.ultimo_secondo = energia_cons;
-    statistiche->scorie_prodotte.totale += scorie;
-    statistiche->scorie_prodotte.ultimo_secondo = scorie;
+    stats->Nattivazioni.totale += attivazioni;
+    stats->Nattivazioni.ultimo_secondo = attivazioni;
+    stats->Nscissioni.totale += scissioni;
+    stats->Nscissioni.ultimo_secondo = scissioni;
+    stats->energia_prodotta.totale += energia_prod;
+    stats->energia_prodotta.ultimo_secondo = energia_prod;
+    stats->energia_consumata.totale += energia_cons;
+    stats->energia_consumata.ultimo_secondo = energia_cons;
+    stats->scorie_prodotte.totale += scorie;
+    stats->scorie_prodotte.ultimo_secondo = scorie;
 
     semUnlock(sem_id); // Sblocco del semaforo
 }
@@ -394,13 +394,12 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    Statistiche *stats = (Statistiche *)shmStatsPtr; // Puntatore alla struttura Statistiche
-    memset(stats, 0, shm_stats_size);
+    stats=(Statistiche *)shmStatsPtr; // Puntatore alla struttura Statistiche
 
     // Check if stats pointer is initialized properly
     if (stats == NULL)
     {
-        fprintf(stderr, "[ERROR] stats pointer is NULL\n");
+        perror("[ERROR] Master: Errore durante l'inizializzazione delle statistiche");
         exit(EXIT_FAILURE);
     }
     printf("[DEBUG] stats initialized successfully: %p\n", (void *)stats);
