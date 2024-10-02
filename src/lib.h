@@ -17,7 +17,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <semaphore.h>
-
+#include <errno.h>
 #define ATOMO_INIT_MSG 1
 #define ATTIVATORE_INIT_MSG 2
 #define ALIMENTAZIONE_INIT_MSG 3

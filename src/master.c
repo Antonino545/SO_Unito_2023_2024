@@ -1,5 +1,5 @@
 #include "lib.h"
-#include <errno.h>
+
 
 /**
  * @file master.c
@@ -117,10 +117,8 @@ void cleanup()
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
 
     killpg(getpid(), SIGTERM);       // Invia il segnale di terminazione a tutti i processi figli
+   while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
 
-    // Attende la terminazione di tutti i processi figli
-    while (wait(NULL) != -1)
-        ;
 
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
