@@ -43,12 +43,22 @@ void handle_sigint(int sig)
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
+void handle_sigusr1(int sig)
+{
+    (void)sig; // Suppresses unused parameter warning
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di start (SIGUSR1)\n", getpid());
+}
 void setup_signal_handler()
 {
     struct sigaction interrupt_sa;
     interrupt_sa.sa_handler = handle_sigint;
     sigemptyset(&interrupt_sa.sa_mask);
     sigaction(SIGINT, &interrupt_sa, NULL);
+    struct sigaction sa_start;
+    sa_start.sa_handler = handle_sigusr1;
+    sigemptyset(&sa_start.sa_mask);
+    sigaction(SIGUSR1, &sa_start, NULL);
+    
 }
 
 int main(int argc, char const *argv[])
@@ -78,7 +88,7 @@ int main(int argc, char const *argv[])
     }
 
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
-
+    pause();
     for (;;)
     {
         for (int i = 0; i < *N_NUOVI_ATOMI; i++)

@@ -458,7 +458,7 @@ int main()
 
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
-
+    kill(alimentazione_pid, SIGUSR1);
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
