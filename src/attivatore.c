@@ -49,7 +49,7 @@ int main(int argc, char const *argv[])
         perror("msgget");
         exit(EXIT_FAILURE);
     }
-    
+
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
     {

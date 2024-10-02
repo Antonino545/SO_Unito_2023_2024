@@ -51,7 +51,9 @@ void handle_createAtomo(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di creazione di un atomo (SIGUSR1)\n", getpid());
-    createAtomo();
+    for(int i = 0; i < *N_NUOVI_ATOMI; i++){
+        createAtomo();
+    }
 }
 
 void setup_signal_handler()
