@@ -52,52 +52,22 @@ void semUnlock(int sem_id)
 }
 
 /**
- * Funzione che inizializza le statistiche nella memoria condivisa e crea il semaforo.
- */
-void initSharedStats()
-{
-    key_t key = ftok("/tmp", 'S');                                   // Chiave per la memoria condivisa
-    int shm_id = shmget(key, sizeof(Statistiche), IPC_CREAT | 0666); // Crea la memoria condivisa
-
-    if (shm_id == -1)
-    {
-        perror("shmget");
-        exit(EXIT_FAILURE);
-    }
-
-    statistiche = (Statistiche *)shmat(shm_id, NULL, 0); // Mappa la memoria condivisa
-    if (statistiche == (void *)-1)
-    {
-        perror("shmat");
-        exit(EXIT_FAILURE);
-    }
-
-    memset(statistiche, 0, sizeof(Statistiche)); // Inizializza le statistiche a 0
-
-    // Creazione del semaforo
-    key_t sem_key = ftok("/tmp", 'M');
-    sem_id = semget(sem_key, 1, IPC_CREAT | 0666); // Crea un semaforo
-
-    if (sem_id == -1)
-    {
-        perror("semget");
-        exit(EXIT_FAILURE);
-    }
-
-    // Inizializza il semaforo a 1 (disponibile)
-    if (semctl(sem_id, 0, SETVAL, 1) == -1)
-    {
-        perror("semctl");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/**
  * Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
  */
 void printStats()
 {
+    if (statistiche == NULL)
+    {
+        fprintf(stderr, "[ERROR] statistiche pointer is NULL in printStats\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Now, check if the fields inside statistiche are initialized
+    printf("[DEBUG] statistiche initialized: Nattivazioni: %d, Nscissioni: %d\n",
+           statistiche->Nattivazioni.totale,
+           statistiche->Nscissioni.totale);
+
     semLock(sem_id); // Blocco del semaforo
 
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
@@ -155,12 +125,6 @@ void cleanup()
     if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
         perror("[ERROR] Master: Errore durante la rimozione del semaforo");
-    }
-
-    // Rimozione della memoria condivisa
-    if (shmctl(shmget(ftok("/tmp", 'S'), sizeof(Statistiche), 0666), IPC_RMID, NULL) == -1)
-    {
-        perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa");
     }
 
     // Rimozione della coda di messaggi
@@ -396,6 +360,9 @@ int main()
     setpgid(0, 0);
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(), getpgrp());
 
+    sem_id = getSemaphoreSet(); // Initialize semaphore
+    printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_id);
+
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
     const size_t shm_size = 10 * sizeof(int); // Dimensione della memoria condivisa (8 interi)
@@ -413,6 +380,33 @@ int main()
     PID_MASTER = (int *)(shmParamsPtr + 8 * sizeof(int));
 
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
+
+    // Configura la memoria condivisa per le statistiche
+    const char *shm_stats_name = "/Statistics";                               // Nome della memoria condivisa per le statistiche
+    const size_t shm_stats_size = sizeof(Statistiche);                        // Dimensione della memoria condivisa per le statistiche
+    void *shmStatsPtr = create_shared_memory(shm_stats_name, shm_stats_size); // Puntatori alle statistiche
+
+    // Check if shared memory for stats was created successfully
+    if (shmStatsPtr == NULL)
+    {
+        fprintf(stderr, "[ERROR] Shared memory for statistics could not be created\n");
+        cleanup();
+        exit(EXIT_FAILURE);
+    }
+
+    Statistiche *stats = (Statistiche *)shmStatsPtr; // Puntatore alla struttura Statistiche
+    memset(stats, 0, shm_stats_size);
+
+    // Check if stats pointer is initialized properly
+    if (stats == NULL)
+    {
+        fprintf(stderr, "[ERROR] stats pointer is NULL\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("[DEBUG] stats initialized successfully: %p\n", (void *)stats);
+
+    printf("[INFO] Master (PID: %d): Memoria condivisa per le statistiche creata e inizializzata con successo.\n", getpid());
+    printStats();
 
     // Apri il file di configurazione e leggi i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
@@ -461,7 +455,6 @@ int main()
     createAttivatore();
     waitForNInitMsg(msqid, 1);
     printf("---------------------------------------\n");
-    initSharedStats(); // Inizializza le statistiche della simulazione
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination = 0;

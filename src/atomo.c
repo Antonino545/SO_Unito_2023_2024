@@ -131,9 +131,9 @@ int main(int argc, char *argv[])
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
     numero_atomico = atoi(argv[1]);
 
-    // Inizializza memoria condivisa per le statistiche (ad es. energia totale liberata)
-    void *stats_shm_ptr = allocateStatisticsMemory();
-    energia_totale = (int *)(stats_shm_ptr); // Supponiamo che l'energia totale sia all'inizio della memoria condivisa
+    // Inizializza memoria condivisa per le statistiche
+    Statistiche *stats = (Statistiche *)allocateStatisticsMemory(); // Ottieni puntatore alla struttura Statistiche
+    int *energia_totale = &(stats->energia_prodotta.totale);        // Supponiamo che energia_prodotta.totale sia la variabile di interesse
 
     // Inizializza i semafori
     semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori

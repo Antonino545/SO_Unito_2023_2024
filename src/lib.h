@@ -1,5 +1,6 @@
 #ifndef LIB_H
 #define LIB_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,10 +28,9 @@
 #define SEMAPHORE_KEY 12345    // Key dei semafori
 #define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi dell
 
-/*
-    * Struttura del messaggio.
-
-*/
+/**
+ * Struttura del messaggio.
+ */
 typedef struct
 {
     long mtype;
@@ -45,22 +45,37 @@ typedef struct
     int n_atom; /**< Numero atomico dell'atomo */
     pid_t pid;  /**< PID del processo creato */
 } atom;
+
 /**
  * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.
  */
 typedef struct
 {
-    int totale;         // Valore totale
-    int ultimo_secondo; // Valore relativo all'ultimo secondo
-} Statistica;
-// Struttura per le statistiche della simulazione
-typedef struct
-{
-    Statistica Nattivazioni;      // Numero di attivazioni
-    Statistica Nscissioni;        // Numero di scissioni
-    Statistica energia_prodotta;  // Quantità di energia prodotta
-    Statistica energia_consumata; // Quantità di energia consumata
-    Statistica scorie_prodotte;   // Quantità di scorie prodotte
+    struct
+    {
+        int totale;
+        int ultimo_secondo;
+    } Nattivazioni;
+    struct
+    {
+        int totale;
+        int ultimo_secondo;
+    } Nscissioni;
+    struct
+    {
+        int totale;
+        int ultimo_secondo;
+    } energia_prodotta;
+    struct
+    {
+        int totale;
+        int ultimo_secondo;
+    } energia_consumata;
+    struct
+    {
+        int totale;
+        int ultimo_secondo;
+    } scorie_prodotte;
 } Statistiche;
 
 extern int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
@@ -129,4 +144,5 @@ int getSemaphoreSet();
 void removeSemaphoreSet(int semid);
 void P(int semid); // Operazione di wait (down)
 void V(int semid); // Operazione di signal (up)
-#endif             // LIB_H
+
+#endif // LIB_H

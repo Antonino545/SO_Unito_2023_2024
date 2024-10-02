@@ -67,26 +67,34 @@ void *allocateParametresMemory()
 
 void *allocateStatisticsMemory()
 {
-    const char *shm_name = "/Statistics"; // Nome della memoria condivisa per le statistiche
-    const size_t shm_size = sizeof(int);  // Supponiamo che serva memorizzare solo un intero (es. energia totale)
+    const char *shm_name = "/Statistics";        // Name for statistics shared memory
+    const size_t shm_size = sizeof(Statistiche); // Size based on structure
 
-    // Apri la memoria condivisa già creata in modalità lettura e scrittura
-    int shm_fd = shm_open(shm_name, O_RDWR, MES_PERM_RW_ALL);
+    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1)
     {
-        perror("[ERROR] Master: Errore durante l'apertura della memoria condivisa per le statistiche (shm_open fallita)");
+        perror("Error in shm_open for statistics");
         exit(EXIT_FAILURE);
     }
 
-    // Mappa la memoria condivisa nel proprio spazio degli indirizzi
+    if (ftruncate(shm_fd, shm_size) == -1)
+    {
+        perror("Error in ftruncate for statistics");
+        exit(EXIT_FAILURE);
+    }
+
     void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (shm_ptr == MAP_FAILED)
     {
-        perror("[ERROR] Master: Errore durante la mappatura della memoria condivisa per le statistiche (mmap fallita)");
+        perror("Error in mmap for statistics");
         exit(EXIT_FAILURE);
     }
 
-    return shm_ptr; // Restituisce il puntatore alla memoria condivisa
+    // Initialize statistics
+    Statistiche *stats = (Statistiche *)shm_ptr;
+    memset(stats, 0, shm_size); // Zero out the statistics structure
+
+    return stats; // Return pointer to the initialized structure
 }
 
 void send_message(int msqid, long type, const char *format, ...)
