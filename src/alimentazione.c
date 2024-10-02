@@ -1,6 +1,6 @@
 #include "lib.h"
 
-int msqid;       // ID della coda di messaggi
+int msqid; // ID della coda di messaggi
 
 void createAtomo()
 {
@@ -25,9 +25,9 @@ void createAtomo()
     }
     else
     {
-            msg_buffer rbuf;
+        msg_buffer rbuf;
 
-       if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 0, 0) < 0)
+        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 0, 0) < 0)
         {
             perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
@@ -40,7 +40,7 @@ void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-   printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
+    printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
 void setup_signal_handler()
@@ -50,7 +50,6 @@ void setup_signal_handler()
     sigemptyset(&interrupt_sa.sa_mask);
     sigaction(SIGINT, &interrupt_sa, NULL);
 }
-
 
 int main(int argc, char const *argv[])
 {
@@ -67,6 +66,7 @@ int main(int argc, char const *argv[])
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
+    STEP = (int *)(shm_ptr + 4 * sizeof(int));
 
     setup_signal_handler();
 
@@ -78,16 +78,24 @@ int main(int argc, char const *argv[])
     }
 
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
-    for(;;)
+
+    for (;;)
     {
-        for(int i = 0; i < *N_NUOVI_ATOMI; i++)
+        for (int i = 0; i < *N_NUOVI_ATOMI; i++)
         {
             createAtomo();
         }
+
         struct timespec step;
         step.tv_sec = 0;
         step.tv_nsec = *STEP;
-        nanosleep(&step, NULL);//ogni step nano secondi crea nnuovi atomi
+
+        if (nanosleep(&step, NULL) < 0)
+        {
+            perror("[ERROR] Alimentazione: nanosleep fallito");
+            exit(EXIT_FAILURE);
+        }
     }
+
     exit(EXIT_FAILURE);
 }
