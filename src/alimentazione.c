@@ -1,17 +1,7 @@
 #include "lib.h"
 
-int running = 0; // Flag che indica se il processo è in esecuzione
+int running = 1; // Flag che indica se il processo è in esecuzione
 int msqid;       // ID della coda di messaggi
-/**
- * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
- * Cambia lo stato della variabile "running" per uscire dal ciclo di attesa.
- */
-void handle_sigint(int sig)
-{
-    (void)sig; // Suppresses unused parameter warning
-    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    running = 0; // Imposta running a 0 per terminare il ciclo di attesa
-}
 
 /*
  * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
@@ -43,6 +33,27 @@ void createAtomo()
         waitForNInitMsg(msqid, 1);
     }
 }
+
+/**
+ * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
+ * Cambia lo stato della variabile "running" per uscire dal ciclo di attesa.
+ */
+void handle_sigint(int sig)
+{
+    (void)sig; // Suppresses unused parameter warning
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+    running = 0; // Imposta running a 0 per terminare il ciclo di attesa
+}
+/**
+ * Funzione che gestisce il segnale SIGUSR1 per iniziare la scissione.
+ */
+void handle_createAtomo(int sig)
+{
+    (void)sig; // Suppresses unused parameter warning
+    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di creazione di un atomo (SIGUSR1)\n", getpid());
+    createAtomo();
+}
+
 void setup_signal_handler()
 {
 
@@ -51,7 +62,14 @@ void setup_signal_handler()
     sa_int.sa_handler = handle_sigint;
     sigemptyset(&sa_int.sa_mask);
     sigaction(SIGINT, &sa_int, NULL);
+    struct sigaction sa_usr1;
+    bzero(&sa_usr1, sizeof(sa_usr1));
+    sa_usr1.sa_handler = handle_createAtomo;
+    sigemptyset(&sa_usr1.sa_mask);
+    sigaction(SIGUSR1, &sa_usr1, NULL);
 }
+
+
 
 int main(int argc, char const *argv[])
 {
@@ -85,5 +103,6 @@ int main(int argc, char const *argv[])
     {
         pause(); // Aspetta un segnale
     }
+    printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }

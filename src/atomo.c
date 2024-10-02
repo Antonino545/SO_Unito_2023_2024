@@ -27,7 +27,7 @@ void handle_scissione(int sig)
     srand(time(NULL) ^ getpid());   // Inizializza il seed del numero casuale con il tempo e il PID
     int probabilita = rand() % 100; // Genera un numero tra 0 e 99
 
-    if (probabilita < 20)
+    if (probabilita < 60)
     {
         int numero_atomico_figlio = generate_random(numero_atomico);
         numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre

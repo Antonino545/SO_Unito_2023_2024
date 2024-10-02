@@ -112,6 +112,7 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
  */
 void cleanup()
 {
+    printf("------------------------------------------------------------\n");
     printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
     kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
@@ -459,9 +460,9 @@ int main()
     int termination = 0;
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
-    sendStartSimulationSignal(attivatore_pid, alimentazione_pid);
     while (*SIM_DURATION > 0)
     {
+        printf("------------------------------------------------------------\n");
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
         /* if(energy<*ENERGY_DEMAND){
              printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
@@ -475,6 +476,22 @@ int main()
         struct timespec my_time;
         my_time.tv_sec = 1;
         my_time.tv_nsec = 0;
+        if(kill(attivatore_pid, SIGUSR1)==-1){
+            perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'attivatore");
+            exit(EXIT_FAILURE);
+        }else{
+            printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a attivatore\n", getpid());
+        }
+        if (kill(alimentazione_pid, SIGUSR1) == -1)
+        {
+            perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'alimentazione");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
+        }
+        
         nanosleep(&my_time, NULL); // Uso nanosleep per aspettare un secondo invece di sleep per evitare che il processo venga interrotto da un segnale
         printStats();
     }

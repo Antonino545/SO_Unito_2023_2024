@@ -18,6 +18,7 @@ void handle_inizia_Messaggi_scissione(int sig)
 {
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di inizio scissione (SIGUSR1)\n", getpid());
     killpg(*PID_MASTER, SIGUSR2); // Invia SIGUSR2 a tutti i processi nel gruppo
+    
 }
 
 /**
@@ -48,7 +49,7 @@ int main(int argc, char const *argv[])
         perror("msgget");
         exit(EXIT_FAILURE);
     }
-
+    
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
     {
@@ -57,14 +58,16 @@ int main(int argc, char const *argv[])
     }
 
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
+    
     send_message(msqid, ATTIVATORE_INIT_MSG, "[INFO] Attivatore (PID: %d): Inizializzazione completata", getpid());
 
-    setup_signal_handlers(); // Configura i gestori di segnale
+
 
     // Ciclo di attesa per i segnali
     while (running)
     {
         pause(); // Aspetta un segnale
     }
+    printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
