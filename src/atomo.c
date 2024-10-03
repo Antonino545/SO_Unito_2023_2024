@@ -178,5 +178,7 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }  
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
+    while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
+    
     exit(EXIT_SUCCESS);
 }

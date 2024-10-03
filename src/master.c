@@ -168,24 +168,10 @@ void handle_sigterm_master(int sig)
  */
 void setup_signal_handler()
 {
-    struct sigaction sa; // Struttura per la gestione dei segnali
-    bzero(&sa, sizeof(sa));
-    sa.sa_handler = handle_meltdown; // Imposta la funzione di gestione del segnale;
-    sigemptyset(&sa.sa_mask);        // Inizializza il set dei segnali bloccati durante l'esecuzione della funzione di gestione
-    sigaction(SIGUSR1, &sa, NULL);   // Imposta la gestione del segnale SIGUSR1
-    struct sigaction interrupt_sa;
-    interrupt_sa.sa_handler = handle_interruption;
-    sigemptyset(&interrupt_sa.sa_mask);
-    sigaction(SIGINT, &interrupt_sa, NULL);
-    struct sigaction sa2;
-    sa2.sa_handler = handle_sigusr2;
-    sigemptyset(&sa2.sa_mask);
-    sigaction(SIGUSR2, &sa2, NULL);
-    struct sigaction sa_term;
-    sa_term.sa_handler = handle_sigterm_master;
-    sa_term.sa_flags = 0;
-    sigemptyset(&sa_term.sa_mask);
-    sigaction(SIGTERM, &sa_term, NULL);
+    sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_sigusr2}, NULL);
+    sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_sigterm_master}, NULL);
+    sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
+    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_meltdown}, NULL);
 }
 
 /*

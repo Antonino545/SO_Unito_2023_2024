@@ -39,7 +39,10 @@ void createAtomo()
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
+    
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+        while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
+
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
@@ -106,6 +109,7 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
     }
+                while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
 
     exit(EXIT_FAILURE);
 }
