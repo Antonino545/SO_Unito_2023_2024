@@ -1,6 +1,5 @@
 #include "lib.h"
 
-
 /**
  * @file master.c
  * @brief Programma principale per la simulazione di atomi e processi correlati.
@@ -19,37 +18,11 @@
  * Puntatori alle variabili nella memoria condivisa.
  */
 
-Statistiche *stats; // Statistiche della simulazione in memoria condivisa
-int msqid;                // ID della coda di messaggi
-int sem_id;               // ID del semaforo
-pid_t attivatore_pid;     // PID del processo attivatore
-pid_t alimentazione_pid;  // PID del processo alimentazione
-
-/**
- * Funzione per bloccare il semaforo.
- */
-void semLock(int sem_id)
-{
-    struct sembuf sb = {0, -1, 0}; // Operazione di lock
-    if (semop(sem_id, &sb, 1) == -1)
-    {
-        perror("semop lock");
-        exit(EXIT_FAILURE);
-    }
-}
-
-/**
- * Funzione per sbloccare il semaforo.
- */
-void semUnlock(int sem_id)
-{
-    struct sembuf sb = {0, 1, 0}; // Operazione di unlock
-    if (semop(sem_id, &sb, 1) == -1)
-    {
-        perror("semop unlock");
-        exit(EXIT_FAILURE);
-    }
-}
+Statistiche *stats;      // Statistiche della simulazione in memoria condivisa
+int msqid;               // ID della coda di messaggi
+int sem_id;              // ID del semaforo
+pid_t attivatore_pid;    // PID del processo attivatore
+pid_t alimentazione_pid; // PID del processo alimentazione
 
 /**
  * Stampa le statistiche della simulazione.
@@ -85,26 +58,37 @@ void printStats()
     semUnlock(sem_id); // Sblocco del semaforo
 }
 
-/**
- * Funzione per aggiornare le statistiche, protetta da semafori.
- * Gli altri processi chiameranno questa funzione per aggiornare i dati.
- */
-void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
+void receive_energia_liberata_message()
 {
-    semLock(sem_id); // Blocco del semaforo
+    // Struttura del messaggio
+    struct msgbuf
+    {
+        long mtype;  // Tipo del messaggio
+        int energia; // Energia liberata
+    } message;
 
-    stats->Nattivazioni.totale += attivazioni;
-    stats->Nattivazioni.ultimo_secondo = attivazioni;
-    stats->Nscissioni.totale += scissioni;
-    stats->Nscissioni.ultimo_secondo = scissioni;
-    stats->energia_prodotta.totale += energia_prod;
-    stats->energia_prodotta.ultimo_secondo = energia_prod;
-    stats->energia_consumata.totale += energia_cons;
-    stats->energia_consumata.ultimo_secondo = energia_cons;
-    stats->scorie_prodotte.totale += scorie;
-    stats->scorie_prodotte.ultimo_secondo = scorie;
+    // Riceviamo il messaggio dalla coda (mtype = 1 per il messaggio di energia)
+    ssize_t result = msgrcv(msqid, &message, sizeof(message.energia), 1, 0);
 
-    semUnlock(sem_id); // Sblocco del semaforo
+    // Verifica se la ricezione è andata a buon fine
+    if (result == -1)
+    {
+        perror("[ERROR] Master: Ricezione del messaggio fallita");
+        return; // Continua l'esecuzione senza terminare il programma
+    }
+
+    // Verifica che l'energia ricevuta sia un valore positivo e sensato
+    if (message.energia < 0)
+    {
+        fprintf(stderr, "[WARNING] Master (PID: %d): Energia ricevuta negativa: %d\n", getpid(), message.energia);
+        return; // Ignora il messaggio se l'energia è negativa
+    }
+
+    // Aggiorna le statistiche nel master
+    printf("[INFO] Master (PID: %d): Ricevuto messaggio con energia liberata = %d\n", getpid(), message.energia);
+
+    // Chiamata per aggiornare le statistiche: incrementa scissioni (1) e aggiorna energia prodotta
+    updateStats(0, 1, message.energia, 0, 0);
 }
 
 /**
@@ -117,8 +101,8 @@ void cleanup()
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
     kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
     killpg(getpid(), SIGTERM);       // Invia il segnale di terminazione a tutti i processi figli
-   while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
-
+    while (wait(NULL) > 0)
+        ; // Aspetta che tutti i processi figli terminino
 
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
@@ -196,7 +180,6 @@ void createAtomo()
             exit(EXIT_FAILURE);
         }
     }
-
 }
 /**
  * Crea un nuovo processo figlio per eseguire il programma `attivatore`.
@@ -375,7 +358,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    stats=(Statistiche *)shmStatsPtr; // Puntatore alla struttura Statistiche
+    stats = (Statistiche *)shmStatsPtr; // Puntatore alla struttura Statistiche
 
     // Check if stats pointer is initialized properly
     if (stats == NULL)
@@ -435,7 +418,7 @@ int main()
     createAlimentazione();
     waitForNInitMsg(msqid, 1);
     printf("---------------------------------------\n");
-   
+
     // Avvio della simulazione principale
     printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination = 0;
@@ -444,6 +427,7 @@ int main()
     printf("Alimentazione PID: %d\n", alimentazione_pid);
     kill(alimentazione_pid, SIGUSR1);
     send_message(msqid, DIVISION_MSG, "inizia a dividere gli atomi", getpid());
+
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
@@ -457,10 +441,15 @@ int main()
          }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
 
+        // Ricezione messaggi di energia liberata dalle scissioni
+        receive_energia_liberata_message();
+
         (*SIM_DURATION)--;
-        nanosleep((const struct timespec[]){{1, 0}}, NULL);// Ogni secondo
+        nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
+
         printStats();
     }
+
     cleanup();
     if (termination == 0)
     {

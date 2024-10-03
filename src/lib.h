@@ -116,6 +116,12 @@ void *allocateParametresMemory();
  * @return Puntatore alla memoria condivisa per le statistiche.
  */
 void *allocateStatisticsMemory();
+void semLock(int sem_id);
+/**
+ * Funzione per sbloccare il semaforo.
+ */
+void semUnlock(int sem_id);
+void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie);
 
 /**
  * Funzione che invia un messaggio formattato al processo master.

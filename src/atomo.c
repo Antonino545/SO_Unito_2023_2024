@@ -11,12 +11,55 @@ int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
 int running = 1;        // Flag che indica se il processo è in esecuzione
 int semid;              // ID del set di semafori
+Statistiche *stats;
 
 // Struttura per le operazioni sui semafori
 struct sembuf sem_lock = {0, -1, 0};  // Operazione di decremento (lock)
 struct sembuf sem_unlock = {0, 1, 0}; // Operazione di incremento (unlock)
 
 int *energia_totale; // Puntatore alla variabile dell'energia totale liberata
+
+void send_energia_liberata_message(int energia_liberata)
+{
+    // Struttura del messaggio
+    struct msgbuf
+    {
+        long mtype;  // Tipo del messaggio
+        int energia; // Energia liberata
+    } message;
+
+    message.mtype = 1; // Impostiamo un tipo di messaggio generico per l'energia
+    message.energia = energia_liberata;
+
+    // Invio del messaggio al master tramite la coda di messaggi
+    if (msgsnd(msqid, &message, sizeof(message.energia), 0) == -1)
+    {
+        perror("[ERROR] Atomo: Invio del messaggio al master fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("[INFO] Atomo (PID: %d): Inviato messaggio al master con energia liberata = %d\n", getpid(), energia_liberata);
+}
+
+/**
+ * Funzione che calcola l'energia liberata durante la divisione dell'atomo
+ * e aggiorna la memoria condivisa delle statistiche in modo sicuro con i semafori.
+ *
+ * @param n1 Numero atomico del padre
+ * @param n2 Numero atomico del figlio
+ * @return Energia liberata
+ */
+int energialiberata(int n1, int n2)
+{
+    int energia_liberata = (n1 * n2) - (n1 > n2 ? n1 : n2); // Formula per calcolare l'energia
+
+    updateStats(0, 1, energia_liberata, 0, 0);
+
+    // Invia un messaggio al master con l'energia liberata
+    send_energia_liberata_message(energia_liberata);
+
+    return energia_liberata;
+}
 
 /**
  * Funzione che gestisce la divisione dell'atomo.
@@ -25,7 +68,7 @@ int *energia_totale; // Puntatore alla variabile dell'energia totale liberata
 void handle_scissione(int sig)
 {
 
-    if (numero_atomico%2==0)
+    if (numero_atomico % 2 == 0)
     {
         int numero_atomico_figlio = generate_random(numero_atomico);
         numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre
@@ -40,6 +83,10 @@ void handle_scissione(int sig)
         }
 
         printf("[INFO] Atomo (PID: %d): Scissione avviata \n", getpid());
+
+        // Calcola l'energia liberata
+        int energia = energialiberata(numero_atomico + numero_atomico_figlio, numero_atomico_figlio);
+        printf("[INFO] Atomo (PID: %d): energia liberata%d \n", getpid(), energia);
 
         // Crea un nuovo processo figlio per rappresentare la scissione
         pid_t pid = fork();
@@ -85,46 +132,16 @@ void handle_sigint(int sig)
 void setup_signal_handler()
 {
 
-if(sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_sigint}, NULL)==-1){
+    if (sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    {
         perror("[ERROR] Atomo: Errore durante la gestione del segnale di terminazione");
         exit(EXIT_FAILURE);
     }
-    if(sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_scissione}, NULL)==-1){
+    if (sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_scissione}, NULL) == -1)
+    {
         perror("[ERROR] Atomo: Errore durante la gestione del segnale di start");
         exit(EXIT_FAILURE);
     }
-}
-/**
- * Funzione che calcola l'energia liberata durante la divisione dell'atomo
- * e aggiorna la memoria condivisa delle statistiche in modo sicuro con i semafori.
- *
- * @param n1 Numero atomico del padre
- * @param n2 Numero atomico del figlio
- * @return Energia liberata
- */
-int energialiberata(int n1, int n2)
-{
-    int energia_liberata = (n1 * n2) - (n1 > n2 ? n1 : n2); // Formula per calcolare l'energia
-
-    // Blocca l'accesso alla memoria condivisa con il semaforo
-    if (semop(semid, &sem_lock, 1) == -1)
-    {
-        perror("[ERROR] Atomo: semop lock fallito");
-        exit(EXIT_FAILURE);
-    }
-
-    // Aggiorna l'energia totale liberata nella memoria condivisa
-    *energia_totale += energia_liberata;
-    printf("[INFO] Atomo (PID: %d): Energia liberata = %d, Energia totale aggiornata = %d\n", getpid(), energia_liberata, *energia_totale);
-
-    // Rilascia il semaforo
-    if (semop(semid, &sem_unlock, 1) == -1)
-    {
-        perror("[ERROR] Atomo: semop unlock fallito");
-        exit(EXIT_FAILURE);
-    }
-
-    return energia_liberata;
 }
 
 int main(int argc, char *argv[])
@@ -142,8 +159,8 @@ int main(int argc, char *argv[])
     numero_atomico = atoi(argv[1]);
 
     // Inizializza memoria condivisa per le statistiche
-    Statistiche *stats = (Statistiche *)allocateStatisticsMemory(); // Ottieni puntatore alla struttura Statistiche
-    int *energia_totale = &(stats->energia_prodotta.totale);        // Supponiamo che energia_prodotta.totale sia la variabile di interesse
+    stats = (Statistiche *)allocateStatisticsMemory(); // Ottieni puntatore alla struttura Statistiche
+    energia_totale = &(stats->energia_prodotta.totale);
 
     // Inizializza i semafori
     semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori
@@ -174,9 +191,10 @@ int main(int argc, char *argv[])
     while (running)
     {
         pause(); // Aspetta un segnale
-    }  
+    }
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-    while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
-    
+    while (wait(NULL) > 0)
+        ; // Aspetta che tutti i processi figli terminino
+
     exit(EXIT_SUCCESS);
 }

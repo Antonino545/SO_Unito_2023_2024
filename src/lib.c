@@ -1,6 +1,8 @@
 #include "lib.h"
 #include <errno.h>
 
+int sem_id;                    // ID del semaforo
+Statistiche *stats;            // Statistiche della simulazione in memoria condivisa
 int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
 int *N_ATOM_MAX;               /** Numero massimo del numero atomico dell'atomo */
 int *MIN_N_ATOMICO;            /** Numero atomico minimo */
@@ -95,6 +97,54 @@ void *allocateStatisticsMemory()
     memset(stats, 0, shm_size); // Zero out the statistics structure
 
     return stats; // Return pointer to the initialized structure
+}
+
+/**
+ * Funzione per bloccare il semaforo.
+ */
+void semLock(int sem_id)
+{
+    struct sembuf sb = {0, -1, 0}; // Operazione di lock
+    if (semop(sem_id, &sb, 1) == -1)
+    {
+        perror("semop lock");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Funzione per sbloccare il semaforo.
+ */
+void semUnlock(int sem_id)
+{
+    struct sembuf sb = {0, 1, 0}; // Operazione di unlock
+    if (semop(sem_id, &sb, 1) == -1)
+    {
+        perror("semop unlock");
+        exit(EXIT_FAILURE);
+    }
+}
+
+/**
+ * Funzione per aggiornare le statistiche, protetta da semafori.
+ * Gli altri processi chiameranno questa funzione per aggiornare i dati.
+ */
+void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
+{
+    semLock(sem_id); // Blocco del semaforo
+
+    stats->Nattivazioni.totale += attivazioni;
+    stats->Nattivazioni.ultimo_secondo = attivazioni;
+    stats->Nscissioni.totale += scissioni;
+    stats->Nscissioni.ultimo_secondo = scissioni;
+    stats->energia_prodotta.totale += energia_prod;
+    stats->energia_prodotta.ultimo_secondo = energia_prod;
+    stats->energia_consumata.totale += energia_cons;
+    stats->energia_consumata.ultimo_secondo = energia_cons;
+    stats->scorie_prodotte.totale += scorie;
+    stats->scorie_prodotte.ultimo_secondo = scorie;
+
+    semUnlock(sem_id); // Sblocco del semaforo
 }
 
 void send_message(int msqid, long type, const char *format, ...)
