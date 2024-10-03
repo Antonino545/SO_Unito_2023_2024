@@ -443,7 +443,7 @@ int main()
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
     kill(alimentazione_pid, SIGUSR1);
-    //kill(attivatore_pid, SIGUSR1);
+    send_message(msqid, DIVISION_MSG, "inizia a dividere gli atomi", getpid());
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
@@ -456,6 +456,7 @@ int main()
              break;
          }*/
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
+
         (*SIM_DURATION)--;
         nanosleep((const struct timespec[]){{1, 0}}, NULL);// Ogni secondo
         printStats();

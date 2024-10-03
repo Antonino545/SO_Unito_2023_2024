@@ -7,7 +7,7 @@ int msqid;       // ID della coda di messaggi
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
-    
+    while(wait(NULL) > 0);
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
@@ -56,17 +56,20 @@ int main(int argc, char const *argv[])
     }
 
     send_message(msqid,ATTIVATORE_INIT_MSG , "Inizializzazione completata", getpid());
-    
-    pause();
-    
+    msg_buffer rbuf;
+    //aspetta un messaggio di tipo 5
+    if(msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 5, 0) < 0){
+        perror("[ERROR] Attivatore: Errore durante la ricezione del messaggio di inzio divisione");
+        exit(EXIT_FAILURE);
+    }else{
+        printf("[INFO] Attivatore (PID: %d): Ricevuto messaggio di inzio divisione\n", getpid());
+    }
     for (;;)
     {
         printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di dividersi\n", getpid());
         killpg(*PID_MASTER, SIGUSR2);
-        
-
         struct timespec step;
-        step.tv_sec = 1;
+        step.tv_sec = 3;
         step.tv_nsec = 0;
 
         if (nanosleep(&step, NULL) < 0)
@@ -76,7 +79,7 @@ int main(int argc, char const *argv[])
         }
     }
 
-
+    while(wait(NULL) > 0);
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
