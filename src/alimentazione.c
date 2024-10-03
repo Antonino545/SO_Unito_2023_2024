@@ -51,19 +51,21 @@ void handle_sigusr1(int sig)
 }
 void setup_signal_handler()
 {
-    struct sigaction interrupt_sa;
-    interrupt_sa.sa_handler = handle_sigint;
-    sigemptyset(&interrupt_sa.sa_mask);
-    sigaction(SIGINT, &interrupt_sa, NULL);
-    struct sigaction sa_start;
-    sa_start.sa_handler = handle_sigusr1;
-    sigemptyset(&sa_start.sa_mask);
-    sigaction(SIGUSR1, &sa_start, NULL);
+    if(sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL)==-1){
+        perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di terminazione");
+        exit(EXIT_FAILURE);
+    }
+    if(sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_sigusr1}, NULL)==-1){
+        perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di start");
+        exit(EXIT_FAILURE);
+    }
+    signal(SIGUSR2, SIG_IGN);// Ignora il segnale SIGUSR2
     
 }
 
 int main(int argc, char const *argv[])
 {
+    setpgid(0, 0);
     printf("[INFO] Alimentazione: Sono stato appena creato\n");
 
     void *shm_ptr = allocateParametresMemory();

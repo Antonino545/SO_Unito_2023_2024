@@ -7,31 +7,31 @@ int msqid;       // ID della coda di messaggi
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
+    
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    running = 0; // Imposta running a 0 per terminare il ciclo
+    printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
+    exit(EXIT_SUCCESS);
+
 }
 
 void handle_dividiatomo(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
-    printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di divisione di un atomo (SIGUSR1)\n", getpid());
+    printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di inzio simulazione (SIGUSR1)\n", getpid());
 }
 
+// Configurazione dei gestori di segnali
 void setup_signal_handler()
 {
-    struct sigaction interrupt_sa;
-    interrupt_sa.sa_handler = handle_sigint;
-    sigemptyset(&interrupt_sa.sa_mask);
-    sigaction(SIGINT, &interrupt_sa, NULL);
-    struct sigaction sa2;
-    sa2.sa_handler = handle_dividiatomo;
-    sigemptyset(&sa2.sa_mask);
-    sigaction(SIGUSR1, &sa2, NULL);  // Assicurati che il segnale giusto sia utilizzato
+    sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
+    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_dividiatomo}, NULL);
+    signal(SIGUSR2, SIG_IGN);
 }
 
 int main(int argc, char const *argv[])
 {
-    printf("[INFO] Attivatore: Sono stato appena creato\n");
+       setpgid(0, 0);
+    printf("[INFO] Attivatore(PID: %d, GID: %d): Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
@@ -45,6 +45,7 @@ int main(int argc, char const *argv[])
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
+
     setup_signal_handler();
 
     key_t key = MESSAGE_QUEUE_KEY;
@@ -57,13 +58,16 @@ int main(int argc, char const *argv[])
     send_message(msqid,ATTIVATORE_INIT_MSG , "Inizializzazione completata", getpid());
     
     pause();
+    
     for (;;)
     {
+        printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di dividersi\n", getpid());
         killpg(*PID_MASTER, SIGUSR2);
+        
 
         struct timespec step;
-        step.tv_sec = 0;
-        step.tv_nsec = *STEP;
+        step.tv_sec = 1;
+        step.tv_nsec = 0;
 
         if (nanosleep(&step, NULL) < 0)
         {

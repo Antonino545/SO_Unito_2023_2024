@@ -115,7 +115,7 @@ void cleanup()
     printf("------------------------------------------------------------\n");
     printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
-
+    kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
     killpg(getpid(), SIGTERM);       // Invia il segnale di terminazione a tutti i processi figli
    while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
 
@@ -155,12 +155,10 @@ void handle_interruption(int sig)
 }
 void handle_sigusr2(int signum)
 {
-    // Custom logic for handling SIGUSR2
     printf("[INFO] Master (PID: %d): Ricevuto SIGUSR2 , ma lo ignoro perche destinato agli atomi\n", getpid());
 }
 void handle_sigterm_master(int sig)
 {
-    // Ignora SIGTERM nel master
     printf("[INFO] Master %d: Ricevuto SIGTERM, ma lo ignoro perche destinato agli atomi\n", getpid());
 }
 /**
@@ -445,7 +443,7 @@ int main()
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
     kill(alimentazione_pid, SIGUSR1);
-    kill(attivatore_pid, SIGUSR1);
+    //kill(attivatore_pid, SIGUSR1);
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
@@ -471,6 +469,5 @@ int main()
     {
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di blackout . Chiusura programma.\n", getpid());
     }
-    //
     exit(EXIT_SUCCESS);
 }

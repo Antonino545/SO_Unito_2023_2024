@@ -84,6 +84,18 @@ void handle_sigint(int sig)
     running = 0; // Imposta running a 0 per terminare il ciclo di attesa
 }
 
+void setup_signal_handler()
+{
+
+if(sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_sigint}, NULL)==-1){
+        perror("[ERROR] Atomo: Errore durante la gestione del segnale di terminazione");
+        exit(EXIT_FAILURE);
+    }
+    if(sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_scissione}, NULL)==-1){
+        perror("[ERROR] Atomo: Errore durante la gestione del segnale di start");
+        exit(EXIT_FAILURE);
+    }
+}
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo
  * e aggiorna la memoria condivisa delle statistiche in modo sicuro con i semafori.
@@ -148,19 +160,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // Gestione dei segnali per la scissione (SIGUSR2) e la terminazione (SIGINT)
-    struct sigaction sa2;
-    bzero(&sa2, sizeof(sa2));
-    sa2.sa_handler = handle_scissione;
-    sigemptyset(&sa2.sa_mask);
-    sigaction(SIGUSR2, &sa2, NULL);
-
-    struct sigaction sa_int;
-    bzero(&sa_int, sizeof(sa_int));
-    sa_int.sa_handler = handle_sigint;
-    sigemptyset(&sa_int.sa_mask);
-    sigaction(SIGTERM, &sa_int, NULL);
-
+    setup_signal_handler(); // Imposta i gestori dei segnali
     // Notifica al master che l'inizializzazione è completata
     send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
 
