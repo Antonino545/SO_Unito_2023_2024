@@ -15,7 +15,6 @@ void handle_dividiatomo(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di divisione di un atomo (SIGUSR1)\n", getpid());
-    killpg(*PID_MASTER, SIGUSR2);
 }
 
 void setup_signal_handler()
@@ -45,7 +44,7 @@ int main(int argc, char const *argv[])
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
-
+    STEP = (int *)(shm_ptr + 4 * sizeof(int));
     setup_signal_handler();
 
     key_t key = MESSAGE_QUEUE_KEY;
@@ -57,11 +56,22 @@ int main(int argc, char const *argv[])
 
     send_message(msqid,ATTIVATORE_INIT_MSG , "Inizializzazione completata", getpid());
     
-    // Aspetta un segnale prima di iniziare a generare
-    while (1)
+    pause();
+    for (;;)
     {
-        pause(); // Aspetta che arrivi un segnale
+        killpg(*PID_MASTER, SIGUSR2);
+
+        struct timespec step;
+        step.tv_sec = 0;
+        step.tv_nsec = *STEP;
+
+        if (nanosleep(&step, NULL) < 0)
+        {
+            perror("[ERROR] Attivatore: nanosleep fallito");
+            exit(EXIT_FAILURE);
+        }
     }
+
 
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
