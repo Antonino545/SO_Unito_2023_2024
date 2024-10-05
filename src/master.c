@@ -85,6 +85,12 @@ void cleanup()
     {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi");
     }
+
+    // Rimozione della memoria condivisa per le statistiche
+    if (shm_unlink("/Statistics") == -1)
+    {
+        perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
+    }
 }
 
 /**
@@ -410,7 +416,7 @@ int main()
              break;
          }*/
 
-               nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
+        nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
 
         printStats();
 

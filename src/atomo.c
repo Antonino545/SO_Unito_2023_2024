@@ -34,6 +34,7 @@ int energialiberata(int n1, int n2)
 void handle_scissione(int sig)
 {
 
+    updateStats(1, 0, 0, 0, 0);
     if (numero_atomico % 2 == 0)
     {
         int numero_atomico_figlio = generate_random(numero_atomico);
@@ -43,6 +44,7 @@ void handle_scissione(int sig)
         // Verifica se il numero atomico è inferiore al minimo consentito
         if (numero_atomico < *MIN_N_ATOMICO)
         {
+            updateStats(0, 0, 0, 0, 1);
             printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
             send_message(msqid, TERMINATION_MSG, "[INFO] Atomo (PID: %d): Atomo terminato", getpid());
             exit(EXIT_SUCCESS);
