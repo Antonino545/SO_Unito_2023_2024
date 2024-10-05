@@ -1,5 +1,4 @@
 #include "lib.h"
-#include <errno.h>
 
 int sem_id;                    // ID del semaforo
 Statistiche *stats;            // Statistiche della simulazione in memoria condivisa
@@ -99,6 +98,54 @@ void *allocateStatisticsMemory()
     return stats; // Return pointer to the initialized structure
 }
 
+int getSemaphoreSet()
+{
+
+    int semid = semget(SEMAPHORE_KEY, 1, IPC_CREAT | 0666); // Create a semaphore set with 1 semaphore
+    if (semid == -1)
+    {
+        perror("semget");
+        exit(EXIT_FAILURE);
+    }
+    // Inizializza il semaforo a 1 (semaforo binario)
+    if (semctl(semid, 0, SETVAL, 1) == -1)
+    {
+        perror("semctl");
+        exit(EXIT_FAILURE);
+    }
+
+    return semid;
+}
+
+void removeSemaphoreSet(int semid)
+{
+    if (semctl(semid, 0, IPC_RMID) == -1)
+    {
+        perror("semctl");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void P(int semid)
+{
+    struct sembuf p_op = {0, -1, 0}; // Operazione di wait
+    if (semop(semid, &p_op, 1) == -1)
+    {
+        perror("P operation");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void V(int semid)
+{
+    struct sembuf v_op = {0, 1, 0}; // Operazione di signal
+    if (semop(semid, &v_op, 1) == -1)
+    {
+        perror("V operation");
+        exit(EXIT_FAILURE);
+    }
+}
+
 /**
  * Funzione per bloccare il semaforo.
  */
@@ -131,13 +178,22 @@ void semUnlock(int sem_id)
  */
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
 {
-    semLock(sem_id); // Blocco del semaforo
+    sem_id = getSemaphoreSet();
+
+    // Lock the semaphore using semLock
+    semLock(sem_id);
+
+    // Aggiornamento delle statistiche
+    printf("[DEBUG] Atomo (PID: %d): Prima dell'aggiornamento: energia_totale = %d\n", getpid(), stats->energia_prodotta.totale);
 
     stats->Nattivazioni.totale += attivazioni;
     stats->Nattivazioni.ultimo_secondo = attivazioni;
     stats->Nscissioni.totale += scissioni;
     stats->Nscissioni.ultimo_secondo = scissioni;
     stats->energia_prodotta.totale += energia_prod;
+
+    printf("[DEBUG] Atomo (PID: %d): Dopo l'aggiornamento: energia_totale = %d\n", getpid(), stats->energia_prodotta.totale);
+
     stats->energia_prodotta.ultimo_secondo = energia_prod;
     stats->energia_consumata.totale += energia_cons;
     stats->energia_consumata.ultimo_secondo = energia_cons;
@@ -240,53 +296,5 @@ void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid)
     else
     {
         printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
-    }
-}
-
-int getSemaphoreSet()
-{
-
-    int semid = semget(SEMAPHORE_KEY, 1, IPC_CREAT | 0666); // Create a semaphore set with 1 semaphore
-    if (semid == -1)
-    {
-        perror("semget");
-        exit(EXIT_FAILURE);
-    }
-    // Inizializza il semaforo a 1 (semaforo binario)
-    if (semctl(semid, 0, SETVAL, 1) == -1)
-    {
-        perror("semctl");
-        exit(EXIT_FAILURE);
-    }
-
-    return semid;
-}
-
-void removeSemaphoreSet(int semid)
-{
-    if (semctl(semid, 0, IPC_RMID) == -1)
-    {
-        perror("semctl");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void P(int semid)
-{
-    struct sembuf p_op = {0, -1, 0}; // Operazione di wait
-    if (semop(semid, &p_op, 1) == -1)
-    {
-        perror("P operation");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void V(int semid)
-{
-    struct sembuf v_op = {0, 1, 0}; // Operazione di signal
-    if (semop(semid, &v_op, 1) == -1)
-    {
-        perror("V operation");
-        exit(EXIT_FAILURE);
     }
 }

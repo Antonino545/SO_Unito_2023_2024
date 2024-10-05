@@ -1,11 +1,4 @@
 #include "lib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <string.h>
-#include <time.h>
-#include <sys/sem.h>
 
 int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
@@ -18,28 +11,6 @@ struct sembuf sem_lock = {0, -1, 0};  // Operazione di decremento (lock)
 struct sembuf sem_unlock = {0, 1, 0}; // Operazione di incremento (unlock)
 
 int *energia_totale; // Puntatore alla variabile dell'energia totale liberata
-
-void send_energia_liberata_message(int energia_liberata)
-{
-    // Struttura del messaggio
-    struct msgbuf
-    {
-        long mtype;  // Tipo del messaggio
-        int energia; // Energia liberata
-    } message;
-
-    message.mtype = 1; // Impostiamo un tipo di messaggio generico per l'energia
-    message.energia = energia_liberata;
-
-    // Invio del messaggio al master tramite la coda di messaggi
-    if (msgsnd(msqid, &message, sizeof(message.energia), 0) == -1)
-    {
-        perror("[ERROR] Atomo: Invio del messaggio al master fallito");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("[INFO] Atomo (PID: %d): Inviato messaggio al master con energia liberata = %d\n", getpid(), energia_liberata);
-}
 
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo
@@ -54,9 +25,6 @@ int energialiberata(int n1, int n2)
     int energia_liberata = (n1 * n2) - (n1 > n2 ? n1 : n2); // Formula per calcolare l'energia
 
     updateStats(0, 1, energia_liberata, 0, 0);
-
-    // Invia un messaggio al master con l'energia liberata
-    send_energia_liberata_message(energia_liberata);
 
     return energia_liberata;
 }
@@ -86,7 +54,7 @@ void handle_scissione(int sig)
 
         // Calcola l'energia liberata
         int energia = energialiberata(numero_atomico + numero_atomico_figlio, numero_atomico_figlio);
-        printf("[INFO] Atomo (PID: %d): energia liberata%d \n", getpid(), energia);
+        printf("[INFO] Atomo (PID: %d): energia liberata: %d \n", getpid(), energia);
 
         // Crea un nuovo processo figlio per rappresentare la scissione
         pid_t pid = fork();

@@ -41,6 +41,8 @@ void printStats()
            stats->Nattivazioni.totale,
            stats->Nscissioni.totale);
 
+    sem_id = getSemaphoreSet();
+
     semLock(sem_id); // Blocco del semaforo
 
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
@@ -56,39 +58,6 @@ void printStats()
     printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), stats->scorie_prodotte.ultimo_secondo);
 
     semUnlock(sem_id); // Sblocco del semaforo
-}
-
-void receive_energia_liberata_message()
-{
-    // Struttura del messaggio
-    struct msgbuf
-    {
-        long mtype;  // Tipo del messaggio
-        int energia; // Energia liberata
-    } message;
-
-    // Riceviamo il messaggio dalla coda (mtype = 1 per il messaggio di energia)
-    ssize_t result = msgrcv(msqid, &message, sizeof(message.energia), 1, 0);
-
-    // Verifica se la ricezione è andata a buon fine
-    if (result == -1)
-    {
-        perror("[ERROR] Master: Ricezione del messaggio fallita");
-        return; // Continua l'esecuzione senza terminare il programma
-    }
-
-    // Verifica che l'energia ricevuta sia un valore positivo e sensato
-    if (message.energia < 0)
-    {
-        fprintf(stderr, "[WARNING] Master (PID: %d): Energia ricevuta negativa: %d\n", getpid(), message.energia);
-        return; // Ignora il messaggio se l'energia è negativa
-    }
-
-    // Aggiorna le statistiche nel master
-    printf("[INFO] Master (PID: %d): Ricevuto messaggio con energia liberata = %d\n", getpid(), message.energia);
-
-    // Chiamata per aggiornare le statistiche: incrementa scissioni (1) e aggiorna energia prodotta
-    updateStats(0, 1, message.energia, 0, 0);
 }
 
 /**
@@ -442,7 +411,6 @@ int main()
         // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
 
         // Ricezione messaggi di energia liberata dalle scissioni
-        receive_energia_liberata_message();
 
         (*SIM_DURATION)--;
         nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
