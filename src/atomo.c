@@ -10,8 +10,6 @@ Statistiche *stats;
 struct sembuf sem_lock = {0, -1, 0};  // Operazione di decremento (lock)
 struct sembuf sem_unlock = {0, 1, 0}; // Operazione di incremento (unlock)
 
-int *energia_totale; // Puntatore alla variabile dell'energia totale liberata
-
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo
  * e aggiorna la memoria condivisa delle statistiche in modo sicuro con i semafori.
@@ -127,8 +125,7 @@ int main(int argc, char *argv[])
     numero_atomico = atoi(argv[1]);
 
     // Inizializza memoria condivisa per le statistiche
-    stats = (Statistiche *)allocateStatisticsMemory(); // Ottieni puntatore alla struttura Statistiche
-    energia_totale = &(stats->energia_prodotta.totale);
+    stats = (Statistiche *)accessStatisticsMemory(); // Ottieni puntatore alla struttura Statistiche
 
     // Inizializza i semafori
     semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori

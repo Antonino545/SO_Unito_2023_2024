@@ -1,4 +1,5 @@
 #include "lib.h"
+#include <stdbool.h>
 
 int sem_id;                    // ID del semaforo
 Statistiche *stats;            // Statistiche della simulazione in memoria condivisa
@@ -66,11 +67,12 @@ void *allocateParametresMemory()
     return shm_ptr;
 }
 
-void *allocateStatisticsMemory()
+void *initializeStatisticsMemory()
 {
-    const char *shm_name = "/Statistics";        // Name for statistics shared memory
-    const size_t shm_size = sizeof(Statistiche); // Size based on structure
+    const char *shm_name = "/Statistics";        // Nome per la memoria condivisa delle statistiche
+    const size_t shm_size = sizeof(Statistiche); // Dimensione basata sulla struttura
 
+    // Apri la memoria condivisa
     int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1)
     {
@@ -78,12 +80,14 @@ void *allocateStatisticsMemory()
         exit(EXIT_FAILURE);
     }
 
+    // Imposta la dimensione della memoria condivisa
     if (ftruncate(shm_fd, shm_size) == -1)
     {
         perror("Error in ftruncate for statistics");
         exit(EXIT_FAILURE);
     }
 
+    // Mappa la memoria condivisa
     void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (shm_ptr == MAP_FAILED)
     {
@@ -91,11 +95,35 @@ void *allocateStatisticsMemory()
         exit(EXIT_FAILURE);
     }
 
-    // Initialize statistics
+    // Inizializza le statistiche
     Statistiche *stats = (Statistiche *)shm_ptr;
-    memset(stats, 0, shm_size); // Zero out the statistics structure
+    memset(stats, 0, shm_size); // Azzeramento della struttura delle statistiche
 
-    return stats; // Return pointer to the initialized structure
+    return stats; // Restituisci il puntatore alla struttura inizializzata
+}
+
+Statistiche *accessStatisticsMemory()
+{
+    const char *shm_name = "/Statistics"; // Nome per la memoria condivisa delle statistiche
+
+    // Apri la memoria condivisa esistente
+    int shm_fd = shm_open(shm_name, O_RDWR, 0666);
+    if (shm_fd == -1)
+    {
+        perror("Error in shm_open for accessing statistics");
+        exit(EXIT_FAILURE);
+    }
+
+    // Mappa la memoria condivisa
+    size_t shm_size = sizeof(Statistiche);
+    void *shm_ptr = mmap(0, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (shm_ptr == MAP_FAILED)
+    {
+        perror("Error in mmap for accessing statistics");
+        exit(EXIT_FAILURE);
+    }
+
+    return (Statistiche *)shm_ptr; // Restituisci il puntatore alla memoria condivisa
 }
 
 int getSemaphoreSet()
@@ -187,18 +215,18 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
     printf("[DEBUG] Atomo (PID: %d): Prima dell'aggiornamento: energia_totale = %d\n", getpid(), stats->energia_prodotta.totale);
 
     stats->Nattivazioni.totale += attivazioni;
-    stats->Nattivazioni.ultimo_secondo = attivazioni;
+    stats->Nattivazioni.ultimo_secondo += attivazioni;
     stats->Nscissioni.totale += scissioni;
-    stats->Nscissioni.ultimo_secondo = scissioni;
+    stats->Nscissioni.ultimo_secondo += scissioni;
     stats->energia_prodotta.totale += energia_prod;
 
     printf("[DEBUG] Atomo (PID: %d): Dopo l'aggiornamento: energia_totale = %d\n", getpid(), stats->energia_prodotta.totale);
 
-    stats->energia_prodotta.ultimo_secondo = energia_prod;
+    stats->energia_prodotta.ultimo_secondo += energia_prod;
     stats->energia_consumata.totale += energia_cons;
-    stats->energia_consumata.ultimo_secondo = energia_cons;
+    stats->energia_consumata.ultimo_secondo += energia_cons;
     stats->scorie_prodotte.totale += scorie;
-    stats->scorie_prodotte.ultimo_secondo = scorie;
+    stats->scorie_prodotte.ultimo_secondo += scorie;
 
     semUnlock(sem_id); // Sblocco del semaforo
 }

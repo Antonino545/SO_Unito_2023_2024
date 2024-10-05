@@ -37,9 +37,10 @@ void printStats()
     }
 
     // Now, check if the fields inside statistiche are initialized
-    printf("[DEBUG] statistiche initialized: Nattivazioni: %d, Nscissioni: %d\n",
+    printf("[DEBUG] statistiche initialized: Nattivazioni: %d, Nscissioni: %d, EnergiaTot: %d\n",
            stats->Nattivazioni.totale,
-           stats->Nscissioni.totale);
+           stats->Nscissioni.totale,
+           stats->energia_prodotta.totale);
 
     sem_id = getSemaphoreSet();
 
@@ -408,14 +409,19 @@ int main()
              termination=1;
              break;
          }*/
-        // Esegui l'azione desiderata qui, ad esempio una pausa di 1 secondo
 
-        // Ricezione messaggi di energia liberata dalle scissioni
-
-        (*SIM_DURATION)--;
-        nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
+               nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
 
         printStats();
+
+        // Azzeramento delle statistiche per l'ultimo secondo
+        stats->Nattivazioni.ultimo_secondo = 0;
+        stats->Nscissioni.ultimo_secondo = 0;
+        stats->energia_prodotta.ultimo_secondo = 0;
+        stats->energia_consumata.ultimo_secondo = 0;
+        stats->scorie_prodotte.ultimo_secondo = 0;
+
+        (*SIM_DURATION)--;
     }
 
     cleanup();

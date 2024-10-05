@@ -24,7 +24,6 @@
 #define TERMINATION_MSG 4      // Tipo di messaggio per la terminazione dell'atomo
 #define DIVISION_MSG 5         // Tipo di messaggio per la divisione dell'atomo
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
-#define MSG_STAS               // messaggio per l'invio di statistiche
 #define MESS_SIZE 128          // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
 #define SEMAPHORE_KEY 12345    // Key dei semafori
@@ -117,6 +116,9 @@ void *allocateParametresMemory();
  * @return Puntatore alla memoria condivisa per le statistiche.
  */
 void *allocateStatisticsMemory();
+
+Statistiche *accessStatisticsMemory();
+
 void semLock(int sem_id);
 /**
  * Funzione per sbloccare il semaforo.
