@@ -411,6 +411,8 @@ int main()
              printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
              printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
              printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
+                     printStats();
+
              termination=1;
              break;
          }
@@ -419,6 +421,8 @@ int main()
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
             printf("[INFO] Master (PID: %d): Energia soglia di esplosione: %d\n", getpid(), *ENERGY_EXPLODE_THRESHOLD);
             printf("[INFO] Master (PID: %d): Energia superiore alla soglia di esplosione simulazione terminata\n", getpid());
+            printStats();
+
             termination=2;
             break;
         }
