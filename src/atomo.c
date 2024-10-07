@@ -35,8 +35,7 @@ void handle_scissione(int sig)
 {
 
     updateStats(1, 0, 0, 0, 0);
-    if (numero_atomico % 2 == 0)
-    {
+
         int numero_atomico_figlio = generate_random(numero_atomico);
         numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre
         printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
@@ -84,7 +83,7 @@ void handle_scissione(int sig)
             // il padre aspetta il messaggio di inizializzazione del figlio
             waitForNInitMsg(msqid, 1);
         }
-    }
+    
 }
 
 /**

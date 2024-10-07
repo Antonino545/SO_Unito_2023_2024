@@ -74,6 +74,8 @@ void cleanup()
         printf("[INFO] Master (PID: %d): Attesa terminazione processo figlio.In attesa di terminare tutti i processi atomi\n", getpid());
         killpg(getpid(), SIGTERM);
     }
+    printf("[INFO] Master (PID: %d):Statistiche finali\n", getpid());
+    printStats();
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
