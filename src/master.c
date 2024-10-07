@@ -71,12 +71,10 @@ void cleanup()
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
     kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
     while (wait(NULL) > 0){
-        printf("[INFO] Master (PID: %d): Attesa terminazione processo figlio.In attesa di terminare tutti i processi atomi\n", getpid());
+        printf("[INFO] Master (PID: %d): Attesa terminazione processi figli\n", getpid());
         killpg(getpid(), SIGTERM);
+              nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
     }
-    printf("------------------------------------------------------------\n");
-    printf("[INFO] Master (PID: %d):Statistiche finali\n", getpid());
-    printStats();
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
@@ -416,8 +414,16 @@ int main()
              termination=1;
              break;
          }
+
+        if((energy-*ENERGY_DEMAND)>*ENERGY_EXPLODE_THRESHOLD){
+            printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
+            printf("[INFO] Master (PID: %d): Energia soglia di esplosione: %d\n", getpid(), *ENERGY_EXPLODE_THRESHOLD);
+            printf("[INFO] Master (PID: %d): Energia superiore alla soglia di esplosione simulazione terminata\n", getpid());
+            termination=2;
+            break;
+        }
         updateStats(0, 0, 0,*ENERGY_DEMAND, 0);
-           printStats();
+        printStats();
         // Azzeramento delle statistiche per l'ultimo secondo
         stats->Nattivazioni.ultimo_secondo = 0;
         stats->Nscissioni.ultimo_secondo = 0;

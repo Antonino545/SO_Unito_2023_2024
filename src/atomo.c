@@ -61,7 +61,7 @@ void handle_scissione(int sig)
         {
             // Processo figlio: rappresenta il nuovo atomo creato dalla scissione
             printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
-
+            
             // Converte il numero atomico in stringa e avvia il nuovo processo atomo
             char num_atomico_str[20];
             snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio);
