@@ -70,10 +70,10 @@ void cleanup()
     printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
     kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
-    killpg(getpid(), SIGTERM);       // Invia il segnale di terminazione a tutti i processi figli
-    while (wait(NULL) > 0)
-        ; // Aspetta che tutti i processi figli terminino
-
+    while (wait(NULL) > 0){
+        printf("[INFO] Master (PID: %d): Attesa terminazione processo figlio.In attesa di terminare tutti i processi atomi\n", getpid());
+        killpg(getpid(), SIGTERM);
+    }
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
@@ -117,17 +117,14 @@ void handle_sigusr2(int signum)
 {
     printf("[INFO] Master (PID: %d): Ricevuto SIGUSR2 , ma lo ignoro perche destinato agli atomi\n", getpid());
 }
-void handle_sigterm_master(int sig)
-{
-    printf("[INFO] Master %d: Ricevuto SIGTERM, ma lo ignoro perche destinato agli atomi\n", getpid());
-}
+
 /**
  * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
  */
 void setup_signal_handler()
 {
-    sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_sigusr2}, NULL);
-    sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_sigterm_master}, NULL);
+    signal(SIGUSR2, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
     sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_meltdown}, NULL);
 }

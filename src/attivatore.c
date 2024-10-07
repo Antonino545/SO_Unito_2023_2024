@@ -7,8 +7,8 @@ int msqid;       // ID della coda di messaggi
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
-    while(wait(NULL) > 0);
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+    while(wait(NULL) > 0);
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 
