@@ -14,17 +14,10 @@ void handle_sigint(int sig)
 
 }
 
-void handle_dividiatomo(int sig)
-{
-    (void)sig; // Suppresses unused parameter warning
-    printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di inzio simulazione (SIGUSR1)\n", getpid());
-}
-
 // Configurazione dei gestori di segnali
 void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
-    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_dividiatomo}, NULL);
     signal(SIGUSR2, SIG_IGN);
 }
 

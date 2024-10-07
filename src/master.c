@@ -67,13 +67,14 @@ void printStats()
 void cleanup()
 {
     printf("------------------------------------------------------------\n");
-    printf("[CLEANUP] Master (PID: %d): Avvio della pulizia\n", getpid());
+    printf("[Info] Master (PID: %d): Avvio della pulizia\n", getpid());
     kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
     kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
     while (wait(NULL) > 0){
         printf("[INFO] Master (PID: %d): Attesa terminazione processo figlio.In attesa di terminare tutti i processi atomi\n", getpid());
         killpg(getpid(), SIGTERM);
     }
+    printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d):Statistiche finali\n", getpid());
     printStats();
     // Rimozione del semaforo
@@ -114,10 +115,6 @@ void handle_interruption(int sig)
     cleanup();
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa della ricezione di un segnale di interruzione. Chiusura programma.\n", getpid());
     exit(EXIT_SUCCESS);
-}
-void handle_sigusr2(int signum)
-{
-    printf("[INFO] Master (PID: %d): Ricevuto SIGUSR2 , ma lo ignoro perche destinato agli atomi\n", getpid());
 }
 
 /**
@@ -344,8 +341,6 @@ int main()
     printf("[DEBUG] stats initialized successfully: %p\n", (void *)stats);
 
     printf("[INFO] Master (PID: %d): Memoria condivisa per le statistiche creata e inizializzata con successo.\n", getpid());
-    printStats();
-
     // Apri il file di configurazione e leggi i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL)
@@ -407,18 +402,22 @@ int main()
     {
         printf("------------------------------------------------------------\n");
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
-        /* if(energy<*ENERGY_DEMAND){
+      
+
+        nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
+
+      
+        int energy = stats->energia_prodotta.totale - stats->energia_consumata.totale;
+        
+        if(energy<*ENERGY_DEMAND){
              printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
              printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
              printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
              termination=1;
              break;
-         }*/
-
-        nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
-
-        printStats();
-
+         }
+        updateStats(0, 0, 0,*ENERGY_DEMAND, 0);
+           printStats();
         // Azzeramento delle statistiche per l'ultimo secondo
         stats->Nattivazioni.ultimo_secondo = 0;
         stats->Nscissioni.ultimo_secondo = 0;
@@ -426,6 +425,7 @@ int main()
         stats->energia_consumata.ultimo_secondo = 0;
         stats->scorie_prodotte.ultimo_secondo = 0;
 
+    
         (*SIM_DURATION)--;
     }
 
@@ -437,6 +437,8 @@ int main()
     else if (termination == 1)
     {
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di blackout . Chiusura programma.\n", getpid());
+    }else if(termination==2){
+        printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di un explode . Chiusura programma.\n", getpid());
     }
     exit(EXIT_SUCCESS);
 }

@@ -203,6 +203,12 @@ void semUnlock(int sem_id)
 /**
  * Funzione per aggiornare le statistiche, protetta da semafori.
  * Gli altri processi chiameranno questa funzione per aggiornare i dati.
+ * @param attivazioni Numero di attivazioni effettuate 
+ * @param scissioni Numero di scissioni effettuate
+ * @param energia_prod Energia prodotta
+ * @param energia_cons Energia consumata
+ * @param scorie Scorie prodotte
+ * 
  */
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
 {
