@@ -75,6 +75,8 @@ void cleanup()
         killpg(getpid(), SIGTERM);
               nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
     }
+    printf("------------------------------------------------------------\n");
+    printStats();
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
@@ -411,8 +413,6 @@ int main()
              printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
              printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
              printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
-                     printStats();
-
              termination=1;
              break;
          }
@@ -421,25 +421,23 @@ int main()
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
             printf("[INFO] Master (PID: %d): Energia soglia di esplosione: %d\n", getpid(), *ENERGY_EXPLODE_THRESHOLD);
             printf("[INFO] Master (PID: %d): Energia superiore alla soglia di esplosione simulazione terminata\n", getpid());
-            printStats();
-
             termination=2;
             break;
         }
         updateStats(0, 0, 0,*ENERGY_DEMAND, 0);
-        printStats();
-        // Azzeramento delle statistiche per l'ultimo secondo
+        (*SIM_DURATION)--;
+        if(*SIM_DURATION >0){
         stats->Nattivazioni.ultimo_secondo = 0;
         stats->Nscissioni.ultimo_secondo = 0;
         stats->energia_prodotta.ultimo_secondo = 0;
         stats->energia_consumata.ultimo_secondo = 0;
         stats->scorie_prodotte.ultimo_secondo = 0;
-
-    
-        (*SIM_DURATION)--;
+        }
+        
     }
 
     cleanup();
+ 
     if (termination == 0)
     {
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
