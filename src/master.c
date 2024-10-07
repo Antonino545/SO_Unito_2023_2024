@@ -61,19 +61,21 @@ void printStats()
     semUnlock(sem_id); // Sblocco del semaforo
 }
 
-/**
- * Funzione di pulizia che rimuove il semaforo e la memoria condivisa.
- */
 void cleanup()
 {
     printf("------------------------------------------------------------\n");
     printf("[Info] Master (PID: %d): Avvio della pulizia\n", getpid());
-    kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
-    kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
-    while (wait(NULL) > 0){
-        printf("[INFO] Master (PID: %d): Attesa terminazione processi figli\n", getpid());
-        killpg(getpid(), SIGTERM);
-              nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
+       // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
+
+    // Aggiungere un timeout per evitare di rimanere bloccati indefinitamente
+    time_t start_time = time(NULL);
+    while (wait(NULL) > 0)
+    {
+        printf("[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino\n", getpid());
+        kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
+        kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
+        killpg(getpgrp(), SIGTERM); 
+        nanosleep((const struct timespec[]){{2, 0}}, NULL); // Ogni secondo
     }
     printf("------------------------------------------------------------\n");
     printStats();
@@ -95,8 +97,8 @@ void cleanup()
         perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
     }
 }
-
 /**
+ * 
  * Questa funzione viene lanciata quando il processo riceve un segnale di meltdown.
  * @param sig Il segnale ricevuto.
  */

@@ -45,7 +45,6 @@ void handle_scissione(int sig)
         {
             updateStats(0, 0, 0, 0, 1);
             printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
-            send_message(msqid, TERMINATION_MSG, "[INFO] Atomo (PID: %d): Atomo terminato", getpid());
             exit(EXIT_SUCCESS);
         }
 
@@ -61,7 +60,6 @@ void handle_scissione(int sig)
         {
             // Processo figlio: rappresenta il nuovo atomo creato dalla scissione
             printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
-            
             // Converte il numero atomico in stringa e avvia il nuovo processo atomo
             char num_atomico_str[20];
             snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio);
@@ -131,7 +129,6 @@ int main(int argc, char *argv[])
     // Inizializza i semafori
     semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori
 
-    printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d)\n", getpid(), numero_atomico, getpgrp());
 
     // Ottieni l'ID della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
@@ -151,7 +148,7 @@ int main(int argc, char *argv[])
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
         running = 0;
     }
-    printf("[INFO] Atomo (PID: %d): In attesa di messaggi di scissione o terminazione\n", getpid());
+    printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
 
     // Ciclo principale di attesa
     while (running)
@@ -159,8 +156,7 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-    while (wait(NULL) > 0)
-        ; // Aspetta che tutti i processi figli terminino
+    while (wait(NULL) > 0);
 
     exit(EXIT_SUCCESS);
 }

@@ -265,13 +265,14 @@ void send_message(int msqid, long type, const char *format, ...)
             else
             {
                 perror("Errore msgsnd: impossibile inviare il messaggio");
-                break;
+                kill(getpid(), SIGTERM);
             }
         }
         else
         {
             perror("Errore msgsnd: impossibile inviare il messaggio");
-            break;
+                       kill(getpid(), SIGTERM);
+
         }
     }
 }
