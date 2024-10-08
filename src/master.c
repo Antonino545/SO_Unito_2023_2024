@@ -23,7 +23,7 @@ int msqid;               // ID della coda di messaggi
 int sem_id;              // ID del semaforo
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
-
+int cleaning = 0;        // flag che indica se la pulizia è in corso
 /**
  * Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
@@ -35,12 +35,6 @@ void printStats()
         fprintf(stderr, "[ERROR] statistiche pointer is NULL in printStats\n");
         exit(EXIT_FAILURE);
     }
-
-    // Now, check if the fields inside statistiche are initialized
-    printf("[DEBUG] statistiche initialized: Nattivazioni: %d, Nscissioni: %d, EnergiaTot: %d\n",
-           stats->Nattivazioni.totale,
-           stats->Nscissioni.totale,
-           stats->energia_prodotta.totale);
 
     sem_id = getSemaphoreSet();
 
@@ -63,10 +57,9 @@ void printStats()
 
 void cleanup()
 {
+    cleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[Info] Master (PID: %d): Avvio della pulizia\n", getpid());
-       // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
-
     // Aggiungere un timeout per evitare di rimanere bloccati indefinitamente
     time_t start_time = time(NULL);
     while (wait(NULL) > 0)
@@ -74,11 +67,13 @@ void cleanup()
         printf("[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino\n", getpid());
         kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
         kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
-        killpg(getpgrp(), SIGTERM); 
+        killpg(getpgrp(), SIGTERM);
         nanosleep((const struct timespec[]){{2, 0}}, NULL); // Ogni secondo
     }
     printf("------------------------------------------------------------\n");
+
     printStats();
+
     // Rimozione del semaforo
     if (semctl(sem_id, 0, IPC_RMID) == -1)
     {
@@ -97,8 +92,9 @@ void cleanup()
         perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
     }
 }
+
 /**
- * 
+ *
  * Questa funzione viene lanciata quando il processo riceve un segnale di meltdown.
  * @param sig Il segnale ricevuto.
  */
@@ -108,6 +104,7 @@ void handle_meltdown(int sig)
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di un meltdown. Chiusura programma.\n", getpid());
     exit(EXIT_SUCCESS);
 }
+
 /**
  * Questa funzione viene lanciata quando il processo riceve un segnale di interruzione.
  * @param sig Il segnale ricevuto.
@@ -135,6 +132,12 @@ void setup_signal_handler()
  */
 void createAtomo()
 {
+    // Controlla se il processo è in fase di pulizia
+    if (cleaning == 1)
+    {
+        printf("[INFO] Master: Impossibile creare nuovi processi. La fase di cleanup è in corso.\n");
+        return; // Esce dalla funzione senza creare il nuovo processo
+    }
     int numero_atomico = generate_random(*N_ATOM_MAX);
     char num_atomico_str[20];
     snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
@@ -168,7 +171,7 @@ void createAttivatore()
         kill(*PID_MASTER, SIGUSR1);
     }
     else if (pid == 0)
-    { // Processo figlio
+    {
         printf("[INFO] Attivatore (PID: %d): Avvio processo attivatore\n", getpid());
 
         // Esegue `attivatore`
@@ -179,7 +182,7 @@ void createAttivatore()
         }
     }
     else
-    { // Processo padre
+    {
         attivatore_pid = pid;
         printf("[INFO] Master (PID: %d): Processo attivatore creato con PID: %d\n", getpid(), pid);
     }
@@ -198,7 +201,7 @@ void createAlimentazione()
         kill(*PID_MASTER, SIGUSR1);
     }
     else if (pid == 0)
-    { // Processo figlio
+    {
         printf("[INFO] Alimentazione (PID: %d): Avvio processo alimentazione\n", getpid());
 
         // Esegue `alimentazione`
@@ -209,7 +212,7 @@ void createAlimentazione()
         }
     }
     else
-    { // Processo padre
+    {
         alimentazione_pid = pid;
         printf("[INFO] Master (PID: %d): Processo alimentazione creato con PID: %d\n", getpid(), pid);
     }
@@ -230,7 +233,7 @@ void readparameters(FILE *file)
     printf("[DEBUG] Master: PID impostato a %d\n", getpid());
     char line[256]; // Buffer per leggere ogni linea del file
     while (fgets(line, sizeof(line), file))
-    {                                    // Legge il file riga per riga
+    {
         line[strcspn(line, "\r\n")] = 0; // Rimuove il carattere di newline
 
         char key[128];
@@ -298,12 +301,12 @@ int main()
     setpgid(0, 0);
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(), getpgrp());
 
-    sem_id = getSemaphoreSet(); // Initialize semaphore
+    sem_id = getSemaphoreSet();
     printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_id);
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
-    const size_t shm_size = 10 * sizeof(int); // Dimensione della memoria condivisa (8 interi)
+    const size_t shm_size = 10 * sizeof(int);
     void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
 
     // Puntatori alle variabili nella memoria condivisa
@@ -332,9 +335,8 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    stats = (Statistiche *)shmStatsPtr; // Puntatore alla struttura Statistiche
+    stats = (Statistiche *)shmStatsPtr;
 
-    // Check if stats pointer is initialized properly
     if (stats == NULL)
     {
         perror("[ERROR] Master: Errore durante l'inizializzazione delle statistiche");
@@ -404,42 +406,43 @@ int main()
     {
         printf("------------------------------------------------------------\n");
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
-      
 
         nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
 
-      
         int energy = stats->energia_prodotta.totale - stats->energia_consumata.totale;
-        
-        if(energy<*ENERGY_DEMAND){
-             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
-             printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
-             printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
-             termination=1;
-             break;
-         }
 
-        if((energy-*ENERGY_DEMAND)>*ENERGY_EXPLODE_THRESHOLD){
+        if (energy < *ENERGY_DEMAND)
+        {
+            printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
+            printf("[INFO] Master (PID: %d): Energia richiesta: %d\n", getpid(), *ENERGY_DEMAND);
+            printf("[INFO] Master (PID: %d): Energia insufficiente simulazione terminata\n", getpid());
+            termination = 1;
+            break;
+        }
+
+        if ((energy - *ENERGY_DEMAND) > *ENERGY_EXPLODE_THRESHOLD)
+        {
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
             printf("[INFO] Master (PID: %d): Energia soglia di esplosione: %d\n", getpid(), *ENERGY_EXPLODE_THRESHOLD);
             printf("[INFO] Master (PID: %d): Energia superiore alla soglia di esplosione simulazione terminata\n", getpid());
-            termination=2;
+            termination = 2;
             break;
         }
-        updateStats(0, 0, 0,*ENERGY_DEMAND, 0);
+        updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
+        printStats();
         (*SIM_DURATION)--;
-        if(*SIM_DURATION >0){
-        stats->Nattivazioni.ultimo_secondo = 0;
-        stats->Nscissioni.ultimo_secondo = 0;
-        stats->energia_prodotta.ultimo_secondo = 0;
-        stats->energia_consumata.ultimo_secondo = 0;
-        stats->scorie_prodotte.ultimo_secondo = 0;
+        if (*SIM_DURATION > 0)
+        {
+            stats->Nattivazioni.ultimo_secondo = 0;
+            stats->Nscissioni.ultimo_secondo = 0;
+            stats->energia_prodotta.ultimo_secondo = 0;
+            stats->energia_consumata.ultimo_secondo = 0;
+            stats->scorie_prodotte.ultimo_secondo = 0;
         }
-        
     }
 
     cleanup();
- 
+
     if (termination == 0)
     {
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
@@ -447,7 +450,9 @@ int main()
     else if (termination == 1)
     {
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di blackout . Chiusura programma.\n", getpid());
-    }else if(termination==2){
+    }
+    else if (termination == 2)
+    {
         printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di un explode . Chiusura programma.\n", getpid());
     }
     exit(EXIT_SUCCESS);

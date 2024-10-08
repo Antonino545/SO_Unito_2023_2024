@@ -203,12 +203,12 @@ void semUnlock(int sem_id)
 /**
  * Funzione per aggiornare le statistiche, protetta da semafori.
  * Gli altri processi chiameranno questa funzione per aggiornare i dati.
- * @param attivazioni Numero di attivazioni effettuate 
+ * @param attivazioni Numero di attivazioni effettuate
  * @param scissioni Numero di scissioni effettuate
  * @param energia_prod Energia prodotta
  * @param energia_cons Energia consumata
  * @param scorie Scorie prodotte
- * 
+ *
  */
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
 {
@@ -218,16 +218,12 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
     semLock(sem_id);
 
     // Aggiornamento delle statistiche
-    printf("[DEBUG] Atomo (PID: %d): Prima dell'aggiornamento: energia_totale = %d\n", getpid(), stats->energia_prodotta.totale);
 
     stats->Nattivazioni.totale += attivazioni;
     stats->Nattivazioni.ultimo_secondo += attivazioni;
     stats->Nscissioni.totale += scissioni;
     stats->Nscissioni.ultimo_secondo += scissioni;
     stats->energia_prodotta.totale += energia_prod;
-
-    printf("[DEBUG] Atomo (PID: %d): Dopo l'aggiornamento: energia_totale = %d\n", getpid(), stats->energia_prodotta.totale);
-
     stats->energia_prodotta.ultimo_secondo += energia_prod;
     stats->energia_consumata.totale += energia_cons;
     stats->energia_consumata.ultimo_secondo += energia_cons;
@@ -271,8 +267,7 @@ void send_message(int msqid, long type, const char *format, ...)
         else
         {
             perror("Errore msgsnd: impossibile inviare il messaggio");
-                       kill(getpid(), SIGTERM);
-
+            kill(getpid(), SIGTERM);
         }
     }
 }
