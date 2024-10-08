@@ -39,12 +39,13 @@ void createAtomo()
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
-    
+
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    while (wait(NULL) > 0); // Aspetta che tutti i processi figli terminino
+    while (wait(NULL) > 0)
+        ; // Aspetta che tutti i processi figli terminino
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
 
-   exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 void handle_sigusr1(int sig)
 {
@@ -53,16 +54,17 @@ void handle_sigusr1(int sig)
 }
 void setup_signal_handler()
 {
-    if(sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL)==-1){
+    if (sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    {
         perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di terminazione");
         exit(EXIT_FAILURE);
     }
-    if(sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_sigusr1}, NULL)==-1){
+    if (sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_sigusr1}, NULL) == -1)
+    {
         perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di start");
         exit(EXIT_FAILURE);
     }
-    signal(SIGUSR2, SIG_IGN);// Ignora il segnale SIGUSR2
-    
+    signal(SIGUSR2, SIG_IGN); // Ignora il segnale SIGUSR2
 }
 
 int main(int argc, char const *argv[])
@@ -77,11 +79,11 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
-    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
-    N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
+    N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
+    PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
 
     setup_signal_handler();
 

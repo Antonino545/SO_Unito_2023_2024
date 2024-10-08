@@ -13,6 +13,7 @@ int *SIM_DURATION;             /** Durata della simulazione */
 int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
 int *PID_MASTER;               /** PID del processo master */
 int *ATOMO_GPID;               /** Gruppo di processi degli atomi */
+
 int generate_random(int max)
 {
     return rand() % max + 1; // Restituisce un numero tra 1 e max
@@ -69,8 +70,8 @@ void *allocateParametresMemory()
 
 void *initializeStatisticsMemory()
 {
-    const char *shm_name = "/Statistics";        // Nome per la memoria condivisa delle statistiche
-    const size_t shm_size = sizeof(Statistiche); // Dimensione basata sulla struttura
+    const char *shm_name = "/Statistics";
+    const size_t shm_size = sizeof(Statistiche);
 
     // Apri la memoria condivisa
     int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
@@ -95,11 +96,10 @@ void *initializeStatisticsMemory()
         exit(EXIT_FAILURE);
     }
 
-    // Inizializza le statistiche
     Statistiche *stats = (Statistiche *)shm_ptr;
     memset(stats, 0, shm_size); // Azzeramento della struttura delle statistiche
 
-    return stats; // Restituisci il puntatore alla struttura inizializzata
+    return stats;
 }
 
 Statistiche *accessStatisticsMemory()
@@ -174,9 +174,6 @@ void V(int semid)
     }
 }
 
-/**
- * Funzione per bloccare il semaforo.
- */
 void semLock(int sem_id)
 {
     struct sembuf sb = {0, -1, 0}; // Operazione di lock
@@ -187,9 +184,6 @@ void semLock(int sem_id)
     }
 }
 
-/**
- * Funzione per sbloccare il semaforo.
- */
 void semUnlock(int sem_id)
 {
     struct sembuf sb = {0, 1, 0}; // Operazione di unlock
@@ -200,24 +194,11 @@ void semUnlock(int sem_id)
     }
 }
 
-/**
- * Funzione per aggiornare le statistiche, protetta da semafori.
- * Gli altri processi chiameranno questa funzione per aggiornare i dati.
- * @param attivazioni Numero di attivazioni effettuate
- * @param scissioni Numero di scissioni effettuate
- * @param energia_prod Energia prodotta
- * @param energia_cons Energia consumata
- * @param scorie Scorie prodotte
- *
- */
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
 {
     sem_id = getSemaphoreSet();
 
-    // Lock the semaphore using semLock
     semLock(sem_id);
-
-    // Aggiornamento delle statistiche
 
     stats->Nattivazioni.totale += attivazioni;
     stats->Nattivazioni.ultimo_secondo += attivazioni;
@@ -230,7 +211,7 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
     stats->scorie_prodotte.totale += scorie;
     stats->scorie_prodotte.ultimo_secondo += scorie;
 
-    semUnlock(sem_id); // Sblocco del semaforo
+    semUnlock(sem_id);
 }
 
 void send_message(int msqid, long type, const char *format, ...)
@@ -256,7 +237,7 @@ void send_message(int msqid, long type, const char *format, ...)
             if (attempts < 5)
             {
                 attempts++;
-                usleep(100000); // Attende 100ms prima di ritentare
+                usleep(100000);
             }
             else
             {

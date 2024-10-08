@@ -3,15 +3,14 @@
 int running = 1; // Flag che indica se il processo è in esecuzione
 int msqid;       // ID della coda di messaggi
 
-
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    while(wait(NULL) > 0);
+    while (wait(NULL) > 0)
+        ;
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
-
 }
 
 // Configurazione dei gestori di segnali
@@ -23,7 +22,7 @@ void setup_signal_handler()
 
 int main(int argc, char const *argv[])
 {
-       setpgid(0, 0);
+    setpgid(0, 0);
     printf("[INFO] Attivatore(PID: %d, GID: %d): Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();
@@ -48,13 +47,16 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
-    send_message(msqid,ATTIVATORE_INIT_MSG , "Inizializzazione completata", getpid());
+    send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata", getpid());
     msg_buffer rbuf;
-    //aspetta un messaggio di tipo 5
-    if(msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 5, 0) < 0){
+
+    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 5, 0) < 0)
+    {
         perror("[ERROR] Attivatore: Errore durante la ricezione del messaggio di inzio divisione");
         exit(EXIT_FAILURE);
-    }else{
+    }
+    else
+    {
         printf("[INFO] Attivatore (PID: %d): Ricevuto messaggio di inzio divisione\n", getpid());
     }
     for (;;)
@@ -72,7 +74,8 @@ int main(int argc, char const *argv[])
         }
     }
 
-    while(wait(NULL) > 0);
+    while (wait(NULL) > 0)
+        ;
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }

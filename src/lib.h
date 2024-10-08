@@ -18,13 +18,14 @@
 #include <sys/sem.h>
 #include <semaphore.h>
 #include <errno.h>
+
 #define ATOMO_INIT_MSG 1
 #define ATTIVATORE_INIT_MSG 2
 #define ALIMENTAZIONE_INIT_MSG 3
 #define TERMINATION_MSG 4      // Tipo di messaggio per la terminazione dell'atomo
 #define DIVISION_MSG 5         // Tipo di messaggio per la divisione dell'atomo
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
-#define MESS_SIZE 30          // Dimensione massima del messaggio
+#define MESS_SIZE 30           // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
 #define SEMAPHORE_KEY 12345    // Key dei semafori
 #define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi dell
@@ -117,13 +118,36 @@ void *allocateParametresMemory();
  */
 void *allocateStatisticsMemory();
 
+/**
+ * @brief Accede alla memoria condivisa contenente una struttura `Statistiche`.
+ *
+ * Apre e mappa la memoria condivisa esistente `/Statistics`, restituendo un puntatore
+ * alla struttura `Statistiche`. In caso di errore, stampa un messaggio e termina il programma.
+ *
+ * @return Statistiche* Puntatore alla struttura mappata.
+ */
 Statistiche *accessStatisticsMemory();
 
+/**
+ * Funzione per bloccare il semaforo.
+ */
 void semLock(int sem_id);
+
 /**
  * Funzione per sbloccare il semaforo.
  */
 void semUnlock(int sem_id);
+
+/**
+ * Funzione per aggiornare le statistiche, protetta da semafori.
+ * Gli altri processi chiameranno questa funzione per aggiornare i dati.
+ * @param attivazioni Numero di attivazioni effettuate
+ * @param scissioni Numero di scissioni effettuate
+ * @param energia_prod Energia prodotta
+ * @param energia_cons Energia consumata
+ * @param scorie Scorie prodotte
+ *
+ */
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie);
 
 /**
