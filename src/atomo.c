@@ -2,7 +2,7 @@
 
 int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
-int running = 1;        // Flag che indica se il processo è in esecuzione
+int isRunning = 1;        // Flag che indica se il processo è in esecuzione
 int semid;              // ID del set di semafori
 Statistiche *stats;
 
@@ -90,7 +90,7 @@ void handle_scissione(int sig)
 void handle_sigint(int sig)
 {
     printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGTERM)\n", getpid());
-    running = 0;
+    isRunning = 0;
 }
 
 void setup_signal_handler()
@@ -144,12 +144,12 @@ int main(int argc, char *argv[])
     {
         printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-        running = 0;
+        isRunning = 0;
     }
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
 
     // Ciclo principale di attesa
-    while (running)
+    while (isRunning)
     {
         pause(); // Aspetta un segnale
     }

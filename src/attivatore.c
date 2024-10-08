@@ -1,28 +1,30 @@
 #include "lib.h"
 
-int running = 1; // Flag che indica se il processo è in esecuzione
+int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;       // ID della coda di messaggi
-
+/**
+ * Funzione che la gestione del segnale SIGINT per terminare l'esecuzione del processo attivatore.
+ * @param sig Il segnale ricevuto.
+ */
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    while (wait(NULL) > 0)
-        ;
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
 
-// Configurazione dei gestori di segnali
+
+/**
+ * Funzione che gestisce il segnale di SIGINT per terminare l'esecuzione del processo attivatore.
+ */
 void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
-    signal(SIGUSR2, SIG_IGN);
 }
 
 int main(int argc, char const *argv[])
 {
-    setpgid(0, 0);
     printf("[INFO] Attivatore(PID: %d, GID: %d): Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();

@@ -39,14 +39,7 @@ typedef struct
     char mtext[MESS_SIZE];
 } msg_buffer;
 
-/**
- * Struttura del messaggio contenente l'informazione dell'atomo.
- */
-typedef struct
-{
-    int n_atom; /**< Numero atomico dell'atomo */
-    pid_t pid;  /**< PID del processo creato */
-} atom;
+
 
 /**
  * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.

@@ -23,7 +23,7 @@ int msqid;               // ID della coda di messaggi
 int sem_id;              // ID del semaforo
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
-int cleaning = 0;        // flag che indica se la pulizia è in corso
+int isCleaning = 0;        // flag che indica se la pulizia è in corso
 /**
  * Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
@@ -55,44 +55,55 @@ void printStats()
     semUnlock(sem_id); // Sblocco del semaforo
 }
 
-void cleanup()
-{
-    cleaning = 1;
+
+void cleanup() {
+    isCleaning = 1;
     printf("------------------------------------------------------------\n");
-    printf("[Info] Master (PID: %d): Avvio della pulizia\n", getpid());
-    // Aggiungere un timeout per evitare di rimanere bloccati indefinitamente
+    printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
+
     time_t start_time = time(NULL);
-    while (wait(NULL) > 0)
-    {
-        printf("[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino\n", getpid());
-        kill(alimentazione_pid, SIGINT); // Invia il segnale di terminazione al processo alimentazione
-        kill(attivatore_pid, SIGINT);    // Invia il segnale di terminazione al processo attivatore
-        killpg(getpgrp(), SIGTERM);
-        nanosleep((const struct timespec[]){{2, 0}}, NULL); // Ogni secondo
+    time_t timeout = 10; // Timeout di 10 secondi
+    const char *loading_chars = "|/-\\";
+    int i = 0;
+
+    // Ciclo di attesa con caricamento
+    while (wait(NULL) > 0) {
+        if (difftime(time(NULL), start_time) >= timeout) {
+            printf("\n[WARNING] Master (PID: %d): Timeout raggiunto, non tutti i processi figli sono terminati\n", getpid());
+            break;
+        }
+
+        printf("\r[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino %c", getpid(), loading_chars[i]);
+        fflush(stdout);
+        
+        // Invia segnali di terminazione ai processi figli
+        kill(alimentazione_pid, SIGINT);  // Invia il segnale SIGINT al processo alimentazione
+        kill(attivatore_pid, SIGINT);     // Invia il segnale SIGINT al processo attivatore
+        killpg(getpgrp(), SIGTERM);       // Invia il segnale SIGTERM a tutto il gruppo di processi
+        
+        nanosleep((const struct timespec[]){{1, 0}}, NULL);  // Pausa di 1 secondo
+        i = (i + 1) % 4;  // Aggiorna l'indice per l'animazione del caricamento
     }
-    printf("------------------------------------------------------------\n");
+    
+    printf("\n------------------------------------------------------------\n");
 
     printStats();
 
     // Rimozione del semaforo
-    if (semctl(sem_id, 0, IPC_RMID) == -1)
-    {
+    if (semctl(sem_id, 0, IPC_RMID) == -1) {
         perror("[ERROR] Master: Errore durante la rimozione del semaforo");
     }
 
     // Rimozione della coda di messaggi
-    if (msgctl(msqid, IPC_RMID, NULL) < 0)
-    {
+    if (msgctl(msqid, IPC_RMID, NULL) < 0) {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi");
     }
 
     // Rimozione della memoria condivisa per le statistiche
-    if (shm_unlink("/Statistics") == -1)
-    {
+    if (shm_unlink("/Statistics") == -1) {
         perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
     }
 }
-
 /**
  *
  * Questa funzione viene lanciata quando il processo riceve un segnale di meltdown.
@@ -133,7 +144,7 @@ void setup_signal_handler()
 void createAtomo()
 {
     // Controlla se il processo è in fase di pulizia
-    if (cleaning == 1)
+    if (isCleaning == 1)
     {
         printf("[INFO] Master: Impossibile creare nuovi processi. La fase di cleanup è in corso.\n");
         return; // Esce dalla funzione senza creare il nuovo processo

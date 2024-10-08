@@ -1,7 +1,10 @@
 #include "lib.h"
 
 int msqid; // ID della coda di messaggi
-
+/**
+ * Funzione che crea un nuovo processo atomo.
+ * Il processo atomo viene creato con un numero atomico casuale.
+ */
 void createAtomo()
 {
     int numero_atomico = generate_random(*N_ATOM_MAX);
@@ -35,7 +38,10 @@ void createAtomo()
         printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
-
+/**
+ * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo alimentazione.
+ * @param sig Il segnale ricevuto.
+ */
 void handle_sigint(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
@@ -47,11 +53,17 @@ void handle_sigint(int sig)
 
     exit(EXIT_SUCCESS);
 }
+/**
+ * Funzione che gestisce il segnale SIGUSR1 per avviare l'alimentazione.
+ */
 void handle_sigusr1(int sig)
 {
     (void)sig; // Suppresses unused parameter warning
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di start (SIGUSR1)\n", getpid());
 }
+/**
+ * Funzione per impostare il gestore dei segnali.
+ */
 void setup_signal_handler()
 {
     if (sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
@@ -64,12 +76,11 @@ void setup_signal_handler()
         perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di start");
         exit(EXIT_FAILURE);
     }
-    signal(SIGUSR2, SIG_IGN); // Ignora il segnale SIGUSR2
 }
 
 int main(int argc, char const *argv[])
 {
-    setpgid(0, 0);
+
     printf("[INFO] Alimentazione: Sono stato appena creato\n");
 
     void *shm_ptr = allocateParametresMemory();
