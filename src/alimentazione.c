@@ -59,14 +59,6 @@ void handle_sigint(int sig)
     exit(EXIT_SUCCESS);
 }
 /**
- * Funzione che gestisce il segnale SIGUSR1 per avviare l'alimentazione.
- */
-void handle_sigusr1(int sig)
-{
-    (void)sig; // Suppresses unused parameter warning
-    printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di start (SIGUSR1)\n", getpid());
-}
-/**
  * Funzione per impostare il gestore dei segnali.
  */
 void setup_signal_handler()
@@ -74,11 +66,6 @@ void setup_signal_handler()
     if (sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
     {
         perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di terminazione");
-        exit(EXIT_FAILURE);
-    }
-    if (sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_sigusr1}, NULL) == -1)
-    {
-        perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di start");
         exit(EXIT_FAILURE);
     }
 }
@@ -110,9 +97,18 @@ int main(int argc, char const *argv[])
         perror("msgget");
         exit(1);
     }
-
+    msg_buffer rbuf;
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
-    pause();
+    
+    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), SIMULATION_MSG, 0) < 0)
+    {
+        perror("[ERROR]Alimentatore: Errore durante la ricezione del messaggio di inzio divisione");
+        exit(EXIT_FAILURE);
+    }
+    else
+    {
+        printf("[INFO] Alimentatore (PID: %d): Ricevuto messaggio di inzio Simulazione\n", getpid());
+    }
     for (;;)
     {
         for (int i = 0; i < *N_NUOVI_ATOMI; i++)

@@ -53,7 +53,7 @@ int main(int argc, char const *argv[])
     send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata", getpid());
     msg_buffer rbuf;
 
-    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 5, 0) < 0)
+    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), SIMULATION_MSG, 0) < 0)
     {
         perror("[ERROR] Attivatore: Errore durante la ricezione del messaggio di inzio divisione");
         exit(EXIT_FAILURE);
@@ -64,7 +64,7 @@ int main(int argc, char const *argv[])
     }
     for (;;)
     {
-        printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di dividersi\n", getpid());
+        printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di Simulazione\n", getpid());
         killpg(*PID_MASTER, SIGUSR2);
         struct timespec step;
         step.tv_sec = 3;
