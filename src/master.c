@@ -54,25 +54,20 @@ void printStats()
     semUnlock(sem_id); // Sblocco del semaforo
 }
 
-
 void cleanup() {
     *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
-    while (wait(NULL) > 0){
-        printf("\r[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino ...", getpid());
+    // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
+    if(attivatore_pid > 0) kill(attivatore_pid, SIGINT);
+    if(alimentazione_pid > 0) kill(alimentazione_pid, SIGINT);
+    if(alimentazione_pid<0 && attivatore_pid<0) killpg(*PID_MASTER, SIGTERM);   //per gli atomi iniziale
+    // Aggiungere un timeout per evitare di rimanere bloccati indefinitamente
+    time_t start_time = time(NULL);
+    while (wait(NULL) > 0 ){
+    killpg(*PID_MASTER, SIGTERM);//si erano avviati ma non erano ancora inizializzati 
+ }
 
-        if(attivatore_pid != -1){
-            kill(attivatore_pid, SIGTERM);
-        }
-        if(alimentazione_pid != -1){
-            kill(alimentazione_pid, SIGTERM);
-        }
-        killpg(getpgrp(), SIGTERM);       // Invia il segnale SIGTERM a tutto il gruppo di processi
-        
-        nanosleep((const struct timespec[]){{1, 0}}, NULL);  // Pausa di 1 secondo
-    }
-    
     printf("\n------------------------------------------------------------\n");
 
     printStats();
@@ -99,6 +94,7 @@ void cleanup() {
  */
 void handle_meltdown(int sig)
 {
+    printf("[INFO] Master (PID: %d): Ricevuto segnale di meltdown. Inizio fase di cleanup\n", getpid());
     cleanup();
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di un meltdown. Chiusura programma.\n", getpid());
     exit(EXIT_FAILURE);
@@ -110,6 +106,7 @@ void handle_meltdown(int sig)
  */
 void handle_interruption(int sig)
 {
+
     cleanup();
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa della ricezione di un segnale di interruzione. Chiusura programma.\n", getpid());
     exit(EXIT_SUCCESS);
@@ -163,7 +160,7 @@ void createAtomo()
  */
 void createAttivatore()
 {
-    pid_t pid = -1;
+    pid_t pid = fork(); // Crea un nuovo processo
 
     if (pid < 0)
     { // Errore nella creazione del processo
