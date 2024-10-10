@@ -65,7 +65,7 @@ void cleanup() {
     // Aggiungere un timeout per evitare di rimanere bloccati indefinitamente
     time_t start_time = time(NULL);
     while (wait(NULL) > 0 ){
-    killpg(*PID_MASTER, SIGTERM);//si erano avviati ma non erano ancora inizializzati 
+    killpg(*PID_MASTER, SIGTERM);//serve per assirarci che tutti i processi atomo siano terminati
  }
 
     printf("\n------------------------------------------------------------\n");
