@@ -399,8 +399,8 @@ int main()
 
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
-    send_message(msqid, SIMULATION_MSG, "inizia a dividere gli atomi", getpid());
-    send_message(msqid, SIMULATION_MSG, "inizia la simulazione", getpid());
+    send_message(msqid, START_SIM_ATIV_MSG, "inizia a dividere gli atomi", getpid());
+    send_message(msqid, START_SIM_ALIM_MSG, "inizia la simulazione", getpid());
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");

@@ -2,18 +2,18 @@
 #include <stdbool.h>
 
 int sem_id;                    // ID del semaforo
-int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
-int *N_ATOM_MAX;               /** Numero massimo del numero atomico dell'atomo */
-int *MIN_N_ATOMICO;            /** Numero atomico minimo */
-int *ENERGY_DEMAND;            /** Domanda di energia */
-int *STEP;                     /** Passo per la variazione dell'energia */
-int *N_NUOVI_ATOMI;            /** Numero di nuovi atomi */
-int *SIM_DURATION;             /** Durata della simulazione */
-int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
-int *PID_MASTER;               /** PID del processo master */
-int *ATOMO_GPID;               /** Gruppo di processi degli atomi */
+int *N_ATOMI_INIT;             // Numero iniziale di atomi */
+int *N_ATOM_MAX;               // Numero massimo del numero atomico dell'atomo */
+int *MIN_N_ATOMICO;            // Numero atomico minimo */
+int *ENERGY_DEMAND;            // Domanda di energia */
+int *STEP;                     // Passo per la variazione dell'energia */
+int *N_NUOVI_ATOMI;            // Numero di nuovi atomi */
+int *SIM_DURATION;             // Durata della simulazione */
+int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia */
+int *PID_MASTER;               // PID del processo master */
+int *ATOMO_GPID;               // Gruppo di processi degli atomi */
 int *isCleaning;               // flag che indica se la pulizia è in corso
-Statistiche *stats;
+Statistiche *stats;            // Statistiche della simulazione
 
 int generate_random(int max)
 {
@@ -155,25 +155,7 @@ void removeSemaphoreSet(int semid)
     }
 }
 
-void P(int semid)
-{
-    struct sembuf p_op = {0, -1, 0}; // Operazione di wait
-    if (semop(semid, &p_op, 1) == -1)
-    {
-        perror("P operation");
-        exit(EXIT_FAILURE);
-    }
-}
 
-void V(int semid)
-{
-    struct sembuf v_op = {0, 1, 0}; // Operazione di signal
-    if (semop(semid, &v_op, 1) == -1)
-    {
-        perror("V operation");
-        exit(EXIT_FAILURE);
-    }
-}
 
 void semLock(int sem_id)
 {

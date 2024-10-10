@@ -23,7 +23,8 @@
 #define ATTIVATORE_INIT_MSG 2
 #define ALIMENTAZIONE_INIT_MSG 3
 #define TERMINATION_MSG 4      // Tipo di messaggio per la terminazione dell'atomo
-#define SIMULATION_MSG 5         // Tipo di messaggio per la divisione dell'atomo
+#define START_SIM_ATIV_MSG 5         // Tipo di messaggio per la divisione dell'atomo
+#define START_SIM_ALIM_MSG 6         // Tipo di messaggio per l'inizio della simulazione
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
 #define MESS_SIZE 30           // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
@@ -48,38 +49,38 @@ typedef struct
     {
         int totale;
         int ultimo_secondo;
-    } Nattivazioni;
+    } Nattivazioni;// Numero di attivazioni
     struct
     {
         int totale;
         int ultimo_secondo;
-    } Nscissioni;
+    } Nscissioni;// Numero di scissioni
     struct
     {
         int totale;
         int ultimo_secondo;
-    } energia_prodotta;
+    } energia_prodotta;// Energia prodotta
     struct
     {
         int totale;
         int ultimo_secondo;
-    } energia_consumata;
+    } energia_consumata;// Energia consumata
     struct
     {
         int totale;
         int ultimo_secondo;
-    } scorie_prodotte;
+    } scorie_prodotte;// scorie prodotte
 } Statistiche;
 
-extern int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
-extern int *N_ATOM_MAX;               /** Numero massimo di atomi */
-extern int *MIN_N_ATOMICO;            /** Numero atomico minimo */
-extern int *ENERGY_DEMAND;            /** Domanda di energia */
-extern int *STEP;                     /** Passo per la variazione dell'energia */
-extern int *N_NUOVI_ATOMI;            /** Numero di nuovi atomi */
-extern int *SIM_DURATION;             /** Durata della simulazione */
-extern int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
-extern int *PID_MASTER;               /** PID del processo master */
+extern int *N_ATOMI_INIT;             // Numero iniziale di atomi */
+extern int *N_ATOM_MAX;               // Numero massimo di atomi */
+extern int *MIN_N_ATOMICO;            // Numero atomico minimo */
+extern int *ENERGY_DEMAND;            // Domanda di energia */
+extern int *STEP;                     // Passo per la variazione dell'energia */
+extern int *N_NUOVI_ATOMI;            // Numero di nuovi atomi */
+extern int *SIM_DURATION;             // Durata della simulazione */
+extern int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia */
+extern int *PID_MASTER;               // PID del processo master */
 extern int *isCleaning;               // flag che indica se la pulizia è in corso
 extern Statistiche *stats;
 
@@ -159,17 +160,17 @@ void send_message(int msqid, long type, const char *format, ...);
  * @param msqid ID della coda di messaggi
  */
 void waitForNInitMsg(int msqid, int n);
-/**
- * Funzione che invia un messaggio di inizio simulazione.
- */
-void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid);
+
 /**
  * Funzione per ottenere l'ID del set di semafori.
  * @return L'ID del set di semafori.
  */
 int getSemaphoreSet();
+/**
+ * Funzione per rimuovere il set di semafori.
+ * @param semid ID del set di semafori.
+ */
 void removeSemaphoreSet(int semid);
-void P(int semid); // Operazione di wait (down)
-void V(int semid); // Operazione di signal (up)
+
 
 #endif // LIB_H

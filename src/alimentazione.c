@@ -100,9 +100,9 @@ int main(int argc, char const *argv[])
     msg_buffer rbuf;
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
     
-    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), SIMULATION_MSG, 0) < 0)
+    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), START_SIM_ALIM_MSG, 0) < 0)
     {
-        perror("[ERROR]Alimentatore: Errore durante la ricezione del messaggio di inzio divisione");
+        perror("[ERROR] Alimentatore: Errore durante la ricezione del messaggio di inzio divisione");
         exit(EXIT_FAILURE);
     }
     else

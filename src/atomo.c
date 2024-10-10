@@ -6,8 +6,6 @@ int isRunning = 1;      // Flag che indica se il processo è in esecuzione
 int semid;              // ID del set di semafori
 
 // Struttura per le operazioni sui semafori
-struct sembuf sem_lock = {0, -1, 0};  // Operazione di decremento (lock)
-struct sembuf sem_unlock = {0, 1, 0}; // Operazione di incremento (unlock)
 
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo
@@ -19,7 +17,7 @@ struct sembuf sem_unlock = {0, 1, 0}; // Operazione di incremento (unlock)
  */
 int energialiberata(int n1, int n2)
 {
-    int energia_liberata = (n1 * n2) - (n1 > n2 ? n1 : n2); // Formula per calcolare l'energia
+    int energia_liberata = (n1 * n2) - max(n1, n2);
 
     updateStats(0, 1, energia_liberata, 0, 0);
 
@@ -163,8 +161,7 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-    while (wait(NULL) > 0)
-        ;
+    while (wait(NULL) > 0);
 
     exit(EXIT_SUCCESS);
 }
