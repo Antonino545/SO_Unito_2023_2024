@@ -39,8 +39,6 @@ typedef struct
     char mtext[MESS_SIZE];
 } msg_buffer;
 
-
-
 /**
  * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.
  */
@@ -82,7 +80,8 @@ extern int *N_NUOVI_ATOMI;            /** Numero di nuovi atomi */
 extern int *SIM_DURATION;             /** Durata della simulazione */
 extern int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
 extern int *PID_MASTER;               /** PID del processo master */
-extern int *isCleaning ;        // flag che indica se la pulizia è in corso
+extern int *isCleaning;               // flag che indica se la pulizia è in corso
+extern Statistiche *stats;
 
 /**
  * Genera un numero casuale tra 1 e `max`.

@@ -2,9 +2,8 @@
 
 int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
-int isRunning = 1;        // Flag che indica se il processo è in esecuzione
+int isRunning = 1;      // Flag che indica se il processo è in esecuzione
 int semid;              // ID del set di semafori
-Statistiche *stats;
 
 // Struttura per le operazioni sui semafori
 struct sembuf sem_lock = {0, -1, 0};  // Operazione di decremento (lock)
@@ -56,7 +55,7 @@ void handle_scissione(int sig)
     printf("[INFO] Atomo (PID: %d): Scissione avviata \n", getpid());
 
     // Calcola l'energia liberata
-    int energia = energialiberata(numero_atomico , numero_atomico_figlio);
+    int energia = energialiberata(numero_atomico, numero_atomico_figlio);
     printf("[INFO] Atomo (PID: %d): energia liberata: %d \n", getpid(), energia);
 
     // Crea un nuovo processo figlio per rappresentare la scissione
@@ -151,7 +150,8 @@ int main(int argc, char *argv[])
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
         isRunning = 0;
     }
-    if(*isCleaning == 1){
+    if (*isCleaning == 1)
+    {
         printf("[INFO] Atomo (PID: %d): creazione atomo non riesce perchè fase di cleanup in corso\n", getpid());
         isRunning = 0;
     }
@@ -163,7 +163,8 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-    while (wait(NULL) > 0);
+    while (wait(NULL) > 0)
+        ;
 
     exit(EXIT_SUCCESS);
 }

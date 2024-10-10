@@ -2,7 +2,6 @@
 #include <stdbool.h>
 
 int sem_id;                    // ID del semaforo
-Statistiche *stats;            // Statistiche della simulazione in memoria condivisa
 int *N_ATOMI_INIT;             /** Numero iniziale di atomi */
 int *N_ATOM_MAX;               /** Numero massimo del numero atomico dell'atomo */
 int *MIN_N_ATOMICO;            /** Numero atomico minimo */
@@ -13,7 +12,8 @@ int *SIM_DURATION;             /** Durata della simulazione */
 int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
 int *PID_MASTER;               /** PID del processo master */
 int *ATOMO_GPID;               /** Gruppo di processi degli atomi */
-int *isCleaning ;        // flag che indica se la pulizia è in corso
+int *isCleaning;               // flag che indica se la pulizia è in corso
+Statistiche *stats;
 
 int generate_random(int max)
 {
@@ -285,4 +285,3 @@ void waitForNInitMsg(int msqid, int n)
         }
     }
 }
-
