@@ -23,7 +23,6 @@ int msqid;               // ID della coda di messaggi
 int sem_id;              // ID del semaforo
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
-int isCleaning = 0;        // flag che indica se la pulizia è in corso
 /**
  * Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
@@ -57,7 +56,7 @@ void printStats()
 
 
 void cleanup() {
-    isCleaning = 1;
+    *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
 
@@ -144,7 +143,7 @@ void setup_signal_handler()
 void createAtomo()
 {
     // Controlla se il processo è in fase di pulizia
-    if (isCleaning == 1)
+    if (*isCleaning == 1)
     {
         printf("[INFO] Master: Impossibile creare nuovi processi. La fase di cleanup è in corso.\n");
         return; // Esce dalla funzione senza creare il nuovo processo
@@ -330,7 +329,8 @@ int main()
     SIM_DURATION = (int *)(shmParamsPtr + 6 * sizeof(int));
     ENERGY_EXPLODE_THRESHOLD = (int *)(shmParamsPtr + 7 * sizeof(int));
     PID_MASTER = (int *)(shmParamsPtr + 8 * sizeof(int));
-
+    isCleaning = (int *)(shmParamsPtr + 9 * sizeof(int));
+    *isCleaning = 0;
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 
     // Configura la memoria condivisa per le statistiche

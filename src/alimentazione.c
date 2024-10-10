@@ -7,6 +7,11 @@ int msqid; // ID della coda di messaggi
  */
 void createAtomo()
 {
+        if (*isCleaning == 1)
+    {
+        printf("[INFO] Alimentazione (PID: %d): Impossibile creare nuovi processi. La fase di cleanup è in corso.\n", getpid());
+        return; // Esce dalla funzione senza creare il nuovo processo
+    }
     int numero_atomico = generate_random(*N_ATOM_MAX);
     char num_atomico_str[20];
     snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
@@ -95,6 +100,7 @@ int main(int argc, char const *argv[])
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
+    isCleaning = (int *)(shm_ptr + 9 * sizeof(int));
 
     setup_signal_handler();
 

@@ -13,6 +13,7 @@ int *SIM_DURATION;             /** Durata della simulazione */
 int *ENERGY_EXPLODE_THRESHOLD; /** Soglia di esplosione dell'energia */
 int *PID_MASTER;               /** PID del processo master */
 int *ATOMO_GPID;               /** Gruppo di processi degli atomi */
+int *isCleaning ;        // flag che indica se la pulizia è in corso
 
 int generate_random(int max)
 {

@@ -40,6 +40,11 @@ void handle_scissione(int sig)
     numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre
     printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
 
+    if (*isCleaning == 1)
+    {
+        printf("[INFO] Atomo (PID: %d): Impossibile creare nuovi processi. La fase di cleanup è in corso.\n", getpid());
+        return; // Esce dalla funzione senza creare il nuovo processo
+    }
     // Verifica se il numero atomico è inferiore al minimo consentito
     if (numero_atomico < *MIN_N_ATOMICO)
     {
@@ -51,7 +56,7 @@ void handle_scissione(int sig)
     printf("[INFO] Atomo (PID: %d): Scissione avviata \n", getpid());
 
     // Calcola l'energia liberata
-    int energia = energialiberata(numero_atomico + numero_atomico_figlio, numero_atomico_figlio);
+    int energia = energialiberata(numero_atomico , numero_atomico_figlio);
     printf("[INFO] Atomo (PID: %d): energia liberata: %d \n", getpid(), energia);
 
     // Crea un nuovo processo figlio per rappresentare la scissione
@@ -120,6 +125,7 @@ int main(int argc, char *argv[])
     void *shm_ptr = allocateParametresMemory();
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
+    isCleaning = (int *)(shm_ptr + 9 * sizeof(int));
     numero_atomico = atoi(argv[1]);
 
     // Inizializza memoria condivisa per le statistiche
@@ -144,6 +150,10 @@ int main(int argc, char *argv[])
     {
         printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
+        isRunning = 0;
+    }
+    if(*isCleaning == 1){
+        printf("[INFO] Atomo (PID: %d): creazione atomo non riesce perchè fase di cleanup in corso\n", getpid());
         isRunning = 0;
     }
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));

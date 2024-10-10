@@ -40,6 +40,7 @@ int main(int argc, char const *argv[])
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
 
+
     setup_signal_handler();
 
     key_t key = MESSAGE_QUEUE_KEY;
