@@ -59,29 +59,18 @@ void cleanup() {
     *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
+    while (wait(NULL) > 0){
+        printf("\r[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino ...", getpid());
 
-    time_t start_time = time(NULL);
-    time_t timeout = 10; // Timeout di 10 secondi
-    const char *loading_chars = "|/-\\";
-    int i = 0;
-
-    // Ciclo di attesa con caricamento
-    while (wait(NULL) > 0) {
-        if (difftime(time(NULL), start_time) >= timeout) {
-            printf("\n[WARNING] Master (PID: %d): Timeout raggiunto, non tutti i processi figli sono terminati\n", getpid());
-            break;
+        if(attivatore_pid != -1){
+            kill(attivatore_pid, SIGTERM);
         }
-
-        printf("\r[DEBUG] Master (PID: %d): In attesa che tutti i processi figli terminino %c", getpid(), loading_chars[i]);
-        fflush(stdout);
-        
-        // Invia segnali di terminazione ai processi figli
-        kill(alimentazione_pid, SIGINT);  // Invia il segnale SIGINT al processo alimentazione
-        kill(attivatore_pid, SIGINT);     // Invia il segnale SIGINT al processo attivatore
+        if(alimentazione_pid != -1){
+            kill(alimentazione_pid, SIGTERM);
+        }
         killpg(getpgrp(), SIGTERM);       // Invia il segnale SIGTERM a tutto il gruppo di processi
         
         nanosleep((const struct timespec[]){{1, 0}}, NULL);  // Pausa di 1 secondo
-        i = (i + 1) % 4;  // Aggiorna l'indice per l'animazione del caricamento
     }
     
     printf("\n------------------------------------------------------------\n");
@@ -156,7 +145,7 @@ void createAtomo()
     if (pid < 0)
     {
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-         handle_meltdown(SIGUSR1);
+        handle_meltdown(SIGUSR1);
 
     }
     else if (pid == 0)
@@ -310,6 +299,8 @@ void readparameters(FILE *file)
 int main()
 {
     setpgid(0, 0);
+    alimentazione_pid = -1;
+    attivatore_pid = -1;
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(), getpgrp());
 
     sem_id = getSemaphoreSet();
