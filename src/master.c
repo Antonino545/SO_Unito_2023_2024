@@ -112,7 +112,7 @@ void handle_meltdown(int sig)
 {
     cleanup();
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa di un meltdown. Chiusura programma.\n", getpid());
-    exit(EXIT_SUCCESS);
+    exit(EXIT_FAILURE);
 }
 
 /**
@@ -134,7 +134,7 @@ void setup_signal_handler()
     signal(SIGUSR2, SIG_IGN);
     signal(SIGTERM, SIG_IGN);
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
-    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_meltdown}, NULL);
+    signal(SIGUSR1, handle_meltdown);
 }
 
 /*
@@ -156,7 +156,8 @@ void createAtomo()
     if (pid < 0)
     {
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
-        kill(*PID_MASTER, SIGUSR1);
+         handle_meltdown(SIGUSR1);
+
     }
     else if (pid == 0)
     {
@@ -173,12 +174,12 @@ void createAtomo()
  */
 void createAttivatore()
 {
-    pid_t pid = fork(); // Crea un nuovo processo
+    pid_t pid = -1;
 
     if (pid < 0)
     { // Errore nella creazione del processo
-        perror("[ERROR] Master: Fork fallita durante la creazione di un attivatore");
-        kill(*PID_MASTER, SIGUSR1);
+        printf("[ERROR] Master(PID: %d): Fork fallita durante la creazione di un Attivatore\n", getpid());
+        handle_meltdown(SIGUSR1);
     }
     else if (pid == 0)
     {
@@ -208,7 +209,7 @@ void createAlimentazione()
     if (pid < 0)
     { // Errore nella creazione del processo
         perror("[ERROR] Master: Fork fallita durante la creazione di un Alimentazione");
-        kill(*PID_MASTER, SIGUSR1);
+        handle_meltdown(SIGUSR1);
     }
     else if (pid == 0)
     {
@@ -456,7 +457,7 @@ int main()
 
     if (termination == 0)
     {
-        printf("[TERMINATION] Master (PID: %d): Simulazione terminata con successo. Chiusura programma.\n", getpid());
+        printf("[TERMINATION] Master (PID: %d): Simulazione terminata per timeout. Chiusura programma.\n", getpid());
     }
     else if (termination == 1)
     {

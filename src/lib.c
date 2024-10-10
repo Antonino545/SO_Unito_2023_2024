@@ -286,27 +286,3 @@ void waitForNInitMsg(int msqid, int n)
     }
 }
 
-/**
- * Invia un segnale di inizio simulazione ai processi attivatore e alimentatore.
- */
-void sendStartSimulationSignal(pid_t attivatore_pid, pid_t alimentazione_pid)
-{
-    if (kill(attivatore_pid, SIGUSR2) == -1)
-    {
-        perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'attivatore");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a attivatore\n", getpid());
-    }
-    if (kill(alimentazione_pid, SIGUSR2) == -1)
-    {
-        perror("[ERROR] Master: Impossibile inviare il segnale di inizio simulazione all'alimentazione");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("[INFO] Master (PID: %d): Segnale di inizio simulazione inviato a alimentazione\n", getpid());
-    }
-}

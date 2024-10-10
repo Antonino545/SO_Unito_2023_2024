@@ -144,7 +144,6 @@ int main(int argc, char *argv[])
 
     setup_signal_handler(); // Imposta i gestori dei segnali
     // Notifica al master che l'inizializzazione è completata
-    send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
 
     if (setpgid(getpid(), *PID_MASTER) == -1)
     {
@@ -157,7 +156,7 @@ int main(int argc, char *argv[])
         isRunning = 0;
     }
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
-
+    send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
     // Ciclo principale di attesa
     while (isRunning)
     {
