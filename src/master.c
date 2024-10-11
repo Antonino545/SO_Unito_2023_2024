@@ -14,10 +14,6 @@
  * - Pulizia della memoria condivisa e della coda di messaggi al termine della simulazione o in caso di errore.
  */
 
-/**
- * Puntatori alle variabili nella memoria condivisa.
- */
-
 int msqid;               // ID della coda di messaggi
 int sem_id;              // ID del semaforo
 pid_t attivatore_pid;    // PID del processo attivatore
