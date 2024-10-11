@@ -22,14 +22,14 @@
 #define ATOMO_INIT_MSG 1
 #define ATTIVATORE_INIT_MSG 2
 #define ALIMENTAZIONE_INIT_MSG 3
-#define TERMINATION_MSG 4      // Tipo di messaggio per la terminazione dell'atomo
-#define START_SIM_ATIV_MSG 5         // Tipo di messaggio per la divisione dell'atomo
-#define START_SIM_ALIM_MSG 6         // Tipo di messaggio per l'inizio della simulazione
+#define TERMINATION_MSG 4 // Tipo di messaggio per la terminazione dell'atomo
+#define START_SIM_ATIV_MSG 5
+#define START_SIM_ALIM_MSG 6
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
 #define MESS_SIZE 30           // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
 #define SEMAPHORE_KEY 12345    // Key dei semafori
-#define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi dell
+#define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi
 
 /**
  * Struttura del messaggio.
@@ -49,40 +49,40 @@ typedef struct
     {
         int totale;
         int ultimo_secondo;
-    } Nattivazioni;// Numero di attivazioni
+    } Nattivazioni;
     struct
     {
         int totale;
         int ultimo_secondo;
-    } Nscissioni;// Numero di scissioni
+    } Nscissioni;
     struct
     {
         int totale;
         int ultimo_secondo;
-    } energia_prodotta;// Energia prodotta
+    } energia_prodotta;
     struct
     {
         int totale;
         int ultimo_secondo;
-    } energia_consumata;// Energia consumata
+    } energia_consumata;
     struct
     {
         int totale;
         int ultimo_secondo;
-    } scorie_prodotte;// scorie prodotte
+    } scorie_prodotte;
 } Statistiche;
 
-extern int *N_ATOMI_INIT;             // Numero iniziale di atomi */
-extern int *N_ATOM_MAX;               // Numero massimo di atomi */
-extern int *MIN_N_ATOMICO;            // Numero atomico minimo */
-extern int *ENERGY_DEMAND;            // Domanda di energia */
-extern int *STEP;                     // Passo per la variazione dell'energia */
-extern int *N_NUOVI_ATOMI;            // Numero di nuovi atomi */
-extern int *SIM_DURATION;             // Durata della simulazione */
-extern int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia */
-extern int *PID_MASTER;               // PID del processo master */
+extern int *N_ATOMI_INIT;             // Numero iniziale di atomi
+extern int *N_ATOM_MAX;               // Numero atomico massimo
+extern int *MIN_N_ATOMICO;            // Numero atomico minimo
+extern int *ENERGY_DEMAND;            // Energia richiesta
+extern int *STEP;                     // Passo per la variazione dell'energia
+extern int *N_NUOVI_ATOMI;            // Numero di nuovi atomi
+extern int *SIM_DURATION;             // Durata della simulazione
+extern int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia
+extern int *PID_MASTER;               // PID del processo master
 extern int *isCleaning;               // flag che indica se la pulizia è in corso
-extern Statistiche *stats;
+extern Statistiche *stats;            // puntatore alle statistiche
 
 /**
  * Genera un numero casuale tra 1 e `max`.
@@ -116,7 +116,7 @@ void *allocateStatisticsMemory();
  * @brief Accede alla memoria condivisa contenente una struttura `Statistiche`.
  *
  * Apre e mappa la memoria condivisa esistente `/Statistics`, restituendo un puntatore
- * alla struttura `Statistiche`. In caso di errore, stampa un messaggio e termina il programma.
+ * alla struttura `Statistiche`.
  *
  * @return Statistiche* Puntatore alla struttura mappata.
  */
@@ -134,7 +134,7 @@ void semUnlock(int sem_id);
 
 /**
  * Funzione per aggiornare le statistiche, protetta da semafori.
- * Gli altri processi chiameranno questa funzione per aggiornare i dati.
+ * Gli altri processi chiamano questa funzione per aggiornare i dati.
  * @param attivazioni Numero di attivazioni effettuate
  * @param scissioni Numero di scissioni effettuate
  * @param energia_prod Energia prodotta
@@ -163,7 +163,7 @@ void waitForNInitMsg(int msqid, int n);
 
 /**
  * Funzione per ottenere l'ID del set di semafori.
- * @return L'ID del set di semafori.
+ * @return ID del set di semafori.
  */
 int getSemaphoreSet();
 /**
@@ -171,6 +171,5 @@ int getSemaphoreSet();
  * @param semid ID del set di semafori.
  */
 void removeSemaphoreSet(int semid);
-
 
 #endif // LIB_H

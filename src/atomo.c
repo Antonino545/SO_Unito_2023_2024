@@ -5,8 +5,6 @@ int numero_atomico = 0; // Numero atomico del processo atomo
 int isRunning = 1;      // Flag che indica se il processo è in esecuzione
 int semid;              // ID del set di semafori
 
-// Struttura per le operazioni sui semafori
-
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo
  * e aggiorna la memoria condivisa delle statistiche in modo sicuro con i semafori.
@@ -42,6 +40,7 @@ void handle_scissione(int sig)
         printf("[INFO] Atomo (PID: %d): Impossibile creare nuovi processi. La fase di cleanup è in corso.\n", getpid());
         return; // Esce dalla funzione senza creare il nuovo processo
     }
+
     // Verifica se il numero atomico è inferiore al minimo consentito
     if (numero_atomico < *MIN_N_ATOMICO)
     {
@@ -62,6 +61,7 @@ void handle_scissione(int sig)
     {
         // Processo figlio: rappresenta il nuovo atomo creato dalla scissione
         printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
+
         // Converte il numero atomico in stringa e avvia il nuovo processo atomo
         char num_atomico_str[20];
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio);
@@ -110,6 +110,16 @@ void setup_signal_handler()
     }
 }
 
+/**
+ * Funzione principale del processo "Atomo".
+ * - Inizializza la memoria condivisa per accedere ai parametri della simulazione e alle statistiche.
+ * - Recupera l'ID della coda di messaggi e i semafori.
+ * - Imposta il gestore dei segnali e invia un messaggio di inizializzazione completata al master.
+ * - Se tutto è corretto, stampa le informazioni sull'atomo creato e si inserisce nel ciclo principale di attesa.
+ * - Resta in attesa di segnali tramite `pause()`, eseguendo azioni specifiche alla ricezione di segnali.
+ * - Alla terminazione, attende la chiusura di eventuali processi figli e chiude il processo correttamente.
+ */
+
 int main(int argc, char *argv[])
 {
     if (argc != 2)
@@ -126,12 +136,11 @@ int main(int argc, char *argv[])
     numero_atomico = atoi(argv[1]);
 
     // Inizializza memoria condivisa per le statistiche
-    stats = (Statistiche *)accessStatisticsMemory(); // Ottieni puntatore alla struttura Statistiche
+    stats = (Statistiche *)accessStatisticsMemory();
 
     // Inizializza i semafori
-    semid = getSemaphoreSet(); // Funzione per ottenere l'ID del set di semafori
+    semid = getSemaphoreSet();
 
-    // Ottieni l'ID della coda di messaggi
     key_t key = MESSAGE_QUEUE_KEY;
     if ((msqid = msgget(key, 0666)) < 0)
     {
@@ -139,8 +148,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    setup_signal_handler(); // Imposta i gestori dei segnali
-    // Notifica al master che l'inizializzazione è completata
+    setup_signal_handler(); // Notifica al master che l'inizializzazione è completata
 
     if (setpgid(getpid(), *PID_MASTER) == -1)
     {
@@ -148,20 +156,24 @@ int main(int argc, char *argv[])
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
         isRunning = 0;
     }
+
     if (*isCleaning == 1)
     {
         printf("[INFO] Atomo (PID: %d): creazione atomo non riesce perchè fase di cleanup in corso\n", getpid());
         isRunning = 0;
     }
+
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
     send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
+
     // Ciclo principale di attesa
     while (isRunning)
     {
         pause(); // Aspetta un segnale
     }
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-    while (wait(NULL) > 0);
+    while (wait(NULL) > 0)
+        ;
 
     exit(EXIT_SUCCESS);
 }

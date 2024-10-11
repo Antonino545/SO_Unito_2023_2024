@@ -1,13 +1,14 @@
 #include "lib.h"
 
 int msqid; // ID della coda di messaggi
+
 /**
  * Funzione che crea un nuovo processo atomo.
  * Il processo atomo viene creato con un numero atomico casuale.
  */
 void createAtomo()
 {
-        if (*isCleaning == 1)
+    if (*isCleaning == 1)
     {
         printf("[INFO] Alimentazione (PID: %d): Impossibile creare nuovi processi. La fase di cleanup è in corso.\n", getpid());
         return; // Esce dalla funzione senza creare il nuovo processo
@@ -17,6 +18,7 @@ void createAtomo()
     snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
 
     pid_t pid = fork();
+
     if (pid < 0)
     {
         perror("[ERROR] Alimentatore: Fork fallita durante la creazione di un atomo");
@@ -43,13 +45,14 @@ void createAtomo()
         printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
+
 /**
  * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo alimentazione.
  * @param sig Il segnale ricevuto.
  */
 void handle_sigint(int sig)
 {
-    (void)sig; // Suppresses unused parameter warning
+    (void)sig; // Sopprime l'avviso di parametro inutilizzato
 
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     while (wait(NULL) > 0)
@@ -58,6 +61,7 @@ void handle_sigint(int sig)
 
     exit(EXIT_SUCCESS);
 }
+
 /**
  * Funzione per impostare il gestore dei segnali.
  */
@@ -69,6 +73,17 @@ void setup_signal_handler()
         exit(EXIT_FAILURE);
     }
 }
+
+/**
+ * Funzione principale del processo "Alimentazione".
+ * - Inizializza la memoria condivisa mappando i parametri necessari.
+ * - Imposta i gestori dei segnali.
+ * - Crea la coda di messaggi per la comunicazione tra i processi e invia un messaggio di inizializzazione completata.
+ * - Attende il messaggio di avvio della simulazione tramite la coda di messaggi.
+ * - All'avvio della simulazione, entra in un ciclo infinito in cui crea nuovi atomi a ogni ciclo.
+ * - Utilizza la funzione `nanosleep` per inserire una pausa (di durata definita da `STEP`) tra le creazioni di atomi.
+ * - Se si verifica un errore, il processo termina con un codice di uscita di errore.
+ */
 
 int main(int argc, char const *argv[])
 {
@@ -99,7 +114,7 @@ int main(int argc, char const *argv[])
     }
     msg_buffer rbuf;
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
-    
+
     if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), START_SIM_ALIM_MSG, 0) < 0)
     {
         perror("[ERROR] Alimentatore: Errore durante la ricezione del messaggio di inzio divisione");

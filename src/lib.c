@@ -2,16 +2,16 @@
 #include <stdbool.h>
 
 int sem_id;                    // ID del semaforo
-int *N_ATOMI_INIT;             // Numero iniziale di atomi */
-int *N_ATOM_MAX;               // Numero massimo del numero atomico dell'atomo */
-int *MIN_N_ATOMICO;            // Numero atomico minimo */
-int *ENERGY_DEMAND;            // Domanda di energia */
-int *STEP;                     // Passo per la variazione dell'energia */
-int *N_NUOVI_ATOMI;            // Numero di nuovi atomi */
-int *SIM_DURATION;             // Durata della simulazione */
-int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia */
-int *PID_MASTER;               // PID del processo master */
-int *ATOMO_GPID;               // Gruppo di processi degli atomi */
+int *N_ATOMI_INIT;             // Numero iniziale di atomi
+int *N_ATOM_MAX;               // Numero atomico massimo
+int *MIN_N_ATOMICO;            // Numero atomico minimo
+int *ENERGY_DEMAND;            // Domanda di energia
+int *STEP;                     // Passo per la variazione dell'energia
+int *N_NUOVI_ATOMI;            // Numero di nuovi atomi
+int *SIM_DURATION;             // Durata della simulazione
+int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia
+int *PID_MASTER;               // PID del processo master
+int *ATOMO_GPID;               // Gruppo di processi degli atomi
 int *isCleaning;               // flag che indica se la pulizia è in corso
 Statistiche *stats;            // Statistiche della simulazione
 
@@ -51,7 +51,7 @@ void *create_shared_memory(const char *shm_name, size_t shm_size)
 void *allocateParametresMemory()
 {
     const char *shm_name = "/Parametres";
-    const size_t shm_size = 8 * sizeof(int); // 8 interi
+    const size_t shm_size = 8 * sizeof(int);
 
     int shm_fd = shm_open(shm_name, O_RDWR, MES_PERM_RW_ALL); // Apre la memoria condivisa in lettura e scrittura che è già stata creata
     if (shm_fd == -1)
@@ -74,7 +74,7 @@ void *initializeStatisticsMemory()
     const char *shm_name = "/Statistics";
     const size_t shm_size = sizeof(Statistiche);
 
-    // Apri la memoria condivisa
+    // Apre la memoria condivisa
     int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
     if (shm_fd == -1)
     {
@@ -105,9 +105,9 @@ void *initializeStatisticsMemory()
 
 Statistiche *accessStatisticsMemory()
 {
-    const char *shm_name = "/Statistics"; // Nome per la memoria condivisa delle statistiche
+    const char *shm_name = "/Statistics";
 
-    // Apri la memoria condivisa esistente
+    // Apre la memoria condivisa esistente
     int shm_fd = shm_open(shm_name, O_RDWR, 0666);
     if (shm_fd == -1)
     {
@@ -124,19 +124,19 @@ Statistiche *accessStatisticsMemory()
         exit(EXIT_FAILURE);
     }
 
-    return (Statistiche *)shm_ptr; // Restituisci il puntatore alla memoria condivisa
+    return (Statistiche *)shm_ptr;
 }
 
 int getSemaphoreSet()
 {
 
-    int semid = semget(SEMAPHORE_KEY, 1, IPC_CREAT | 0666); // Create a semaphore set with 1 semaphore
+    int semid = semget(SEMAPHORE_KEY, 1, IPC_CREAT | 0666); // crea un set di semafori con un semaforo
     if (semid == -1)
     {
         perror("semget");
         exit(EXIT_FAILURE);
     }
-    // Inizializza il semaforo a 1 (semaforo binario)
+    // Inizializza il semaforo a 1
     if (semctl(semid, 0, SETVAL, 1) == -1)
     {
         perror("semctl");
@@ -154,8 +154,6 @@ void removeSemaphoreSet(int semid)
         exit(EXIT_FAILURE);
     }
 }
-
-
 
 void semLock(int sem_id)
 {
@@ -241,14 +239,13 @@ void waitForNInitMsg(int msqid, int n)
     msg_buffer rbuf;
     for (int i = 0; i < n; i++)
     {
-        // Receive any message
         if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), 0, 0) < 0)
         {
             perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
         }
 
-        // Display the correct message based on the type
+        // mostra il messaggio corretto a seconda del tipo
         if (rbuf.mtype == ATOMO_INIT_MSG)
         {
             printf("[MESSRIC] Master (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);

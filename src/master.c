@@ -18,11 +18,11 @@
  * Puntatori alle variabili nella memoria condivisa.
  */
 
-Statistiche *stats;      // Statistiche della simulazione in memoria condivisa
 int msqid;               // ID della coda di messaggi
 int sem_id;              // ID del semaforo
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
+
 /**
  * Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
@@ -54,39 +54,48 @@ void printStats()
     semUnlock(sem_id); // Sblocco del semaforo
 }
 
-void cleanup() {
+void cleanup()
+{
     *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
     // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
-    if(attivatore_pid > 0) kill(attivatore_pid, SIGINT);
-    if(alimentazione_pid > 0) kill(alimentazione_pid, SIGINT);
-    if(alimentazione_pid<0 && attivatore_pid<0) killpg(*PID_MASTER, SIGTERM);   //per gli atomi iniziale
-    // Aggiungere un timeout per evitare di rimanere bloccati indefinitamente
+    if (attivatore_pid > 0)
+        kill(attivatore_pid, SIGINT);
+    if (alimentazione_pid > 0)
+        kill(alimentazione_pid, SIGINT);
+    if (alimentazione_pid < 0 && attivatore_pid < 0)
+        killpg(*PID_MASTER, SIGTERM); // per gli atomi iniziali
+    // timeout per evitare di rimanere bloccati indefinitamente
     time_t start_time = time(NULL);
-    while (wait(NULL) > 0 ){
-    killpg(*PID_MASTER, SIGTERM);//serve per assirarci che tutti i processi atomo siano terminati
- }
+    while (wait(NULL) > 0)
+    {
+        killpg(*PID_MASTER, SIGTERM); // serve per assicurare che tutti i processi atomo siano terminati
+    }
 
     printf("\n------------------------------------------------------------\n");
 
     printStats();
 
     // Rimozione del semaforo
-    if (semctl(sem_id, 0, IPC_RMID) == -1) {
+    if (semctl(sem_id, 0, IPC_RMID) == -1)
+    {
         perror("[ERROR] Master: Errore durante la rimozione del semaforo");
     }
 
     // Rimozione della coda di messaggi
-    if (msgctl(msqid, IPC_RMID, NULL) < 0) {
+    if (msgctl(msqid, IPC_RMID, NULL) < 0)
+    {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi");
     }
 
     // Rimozione della memoria condivisa per le statistiche
-    if (shm_unlink("/Statistics") == -1) {
+    if (shm_unlink("/Statistics") == -1)
+    {
         perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
     }
 }
+
 /**
  *
  * Questa funzione viene lanciata quando il processo riceve un segnale di meltdown.
@@ -113,7 +122,10 @@ void handle_interruption(int sig)
 }
 
 /**
- * Questa funzione gestisce come il processo deve comportarsi quando riceve un segnale di meltdown.
+ * Questa funzione imposta i gestori di segnali per il processo:
+ * - Ignora SIGUSR2 e SIGTERM.
+ * - Gestisce SIGINT con la funzione handle_interruption.
+ * - Gestisce SIGUSR1 con la funzione handle_meltdown
  */
 void setup_signal_handler()
 {
@@ -134,6 +146,7 @@ void createAtomo()
         printf("[INFO] Master: Impossibile creare nuovi processi. La fase di cleanup è in corso.\n");
         return; // Esce dalla funzione senza creare il nuovo processo
     }
+
     int numero_atomico = generate_random(*N_ATOM_MAX);
     char num_atomico_str[20];
     snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico);
@@ -143,7 +156,6 @@ void createAtomo()
     {
         perror("[ERROR] Master: Fork fallita durante la creazione di un atomo");
         handle_meltdown(SIGUSR1);
-
     }
     else if (pid == 0)
     {
@@ -155,12 +167,13 @@ void createAtomo()
         }
     }
 }
+
 /**
  * Crea un nuovo processo figlio per eseguire il programma `attivatore`.
  */
 void createAttivatore()
 {
-    pid_t pid = fork(); // Crea un nuovo processo
+    pid_t pid = fork();
 
     if (pid < 0)
     { // Errore nella creazione del processo
@@ -190,7 +203,7 @@ void createAttivatore()
  */
 void createAlimentazione()
 {
-    pid_t pid = fork(); // Crea un nuovo processo
+    pid_t pid = fork();
 
     if (pid < 0)
     { // Errore nella creazione del processo
@@ -287,10 +300,15 @@ void readparameters(FILE *file)
 
 /**
  * Funzione principale del programma.
- * - Configura e mappa la memoria condivisa.
- * - Legge i parametri dal file di configurazione.
- * - Crea processi per la simulazione e gestisce la loro esecuzione.
- * - Gestisce la durata della simulazione e la pulizia finale.
+ * - Imposta il gruppo di processi e i PID iniziali.
+ * - Inizializza il set di semafori.
+ * - Crea e mappa la memoria condivisa per i parametri e le statistiche.
+ * - Legge i parametri di configurazione da un file.
+ * - Crea la coda di messaggi e imposta i gestori di segnali.
+ * - Crea i processi principali della simulazione: atomi, attivatore e alimentatore.
+ * - Esegue la simulazione principale, monitorando la durata, il consumo di energia e le condizioni di arresto.
+ * - Gestisce la terminazione della simulazione in caso di timeout, blackout o esplosione.
+ * - Pulizia finale e rilascio delle risorse condivise.
  * @return Codice di uscita del programma.
  */
 int main()
@@ -327,7 +345,7 @@ int main()
     const size_t shm_stats_size = sizeof(Statistiche);                        // Dimensione della memoria condivisa per le statistiche
     void *shmStatsPtr = create_shared_memory(shm_stats_name, shm_stats_size); // Puntatori alle statistiche
 
-    // Check if shared memory for stats was created successfully
+    // Controlla se la shared memory per stats è stata creata con successo
     if (shmStatsPtr == NULL)
     {
         fprintf(stderr, "[ERROR] Shared memory for statistics could not be created\n");
@@ -345,7 +363,7 @@ int main()
     printf("[DEBUG] stats initialized successfully: %p\n", (void *)stats);
 
     printf("[INFO] Master (PID: %d): Memoria condivisa per le statistiche creata e inizializzata con successo.\n", getpid());
-    // Apri il file di configurazione e leggi i parametri
+    // Apre il file di configurazione e legge i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL)
     {
@@ -427,9 +445,13 @@ int main()
             termination = 2;
             break;
         }
+
         updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
+
         printStats();
+
         (*SIM_DURATION)--;
+
         if (*SIM_DURATION > 0)
         {
             stats->Nattivazioni.ultimo_secondo = 0;
