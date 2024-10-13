@@ -3,7 +3,6 @@
 int msqid;              // ID della coda di messaggi
 int numero_atomico = 0; // Numero atomico del processo atomo
 int isRunning = 1;      // Flag che indica se il processo è in esecuzione
-int semid;              // ID del set di semafori
 
 /**
  * Funzione che calcola l'energia liberata durante la divisione dell'atomo
@@ -139,7 +138,7 @@ int main(int argc, char *argv[])
     stats = (Statistiche *)accessStatisticsMemory();
 
     // Inizializza i semafori
-    semid = getSemaphoreSet();
+    sem_id = getSemaphoreSet();
 
     key_t key = MESSAGE_QUEUE_KEY;
     if ((msqid = msgget(key, 0666)) < 0)

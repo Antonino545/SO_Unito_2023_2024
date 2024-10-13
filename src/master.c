@@ -15,7 +15,6 @@
  */
 
 int msqid;               // ID della coda di messaggi
-int sem_id;              // ID del semaforo
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
 

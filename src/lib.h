@@ -83,6 +83,7 @@ extern int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia
 extern int *PID_MASTER;               // PID del processo master
 extern int *isCleaning;               // flag che indica se la pulizia è in corso
 extern Statistiche *stats;            // puntatore alle statistiche
+extern int sem_id;                    // ID del semaforo
 
 /**
  * Genera un numero casuale tra 1 e `max`.
