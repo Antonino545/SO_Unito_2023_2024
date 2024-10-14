@@ -45,25 +45,36 @@ void createAtomo()
         printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
+void handle_sigalrm(int sig)
+{
+    (void)sig; // Sopprime l'avviso di parametro inutilizzato
+    printf("[INFO] Alimentazione (PID: %d): Timeout raggiunto, invio SIGTERM ai figli\n", getpid());
+    while (waitpid(-1, NULL, WNOHANG) > 0) {
+        kill(waitpid(-1, NULL, WNOHANG), SIGTERM);
+    }
+}
 
-/**
- * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo alimentazione.
- * @param sig Il segnale ricevuto.
- */
 void handle_sigint(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
 
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    while (wait(NULL) > 0){
+
+    // Imposta il gestore per SIGALRM
+    signal(SIGALRM, handle_sigalrm);
+    // Imposta un timeout di 10 secondi
+    alarm(10);
+
+    while (wait(NULL) > 0) {
         printf("[INFO] Alimentazione (PID: %d): Attesa terminazione figli\n", getpid());
-        //invio il segnale di terminazione ai figli
+        // Invia il segnale di terminazione ai figli
         kill(wait(NULL), SIGTERM);
     }
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
 
     exit(EXIT_SUCCESS);
 }
+
 
 /**
  * Funzione per impostare il gestore dei segnali.
