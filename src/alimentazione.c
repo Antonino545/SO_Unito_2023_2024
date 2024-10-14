@@ -55,8 +55,11 @@ void handle_sigint(int sig)
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
 
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-    while (wait(NULL) > 0)
-        ; // Aspetta che tutti i processi figli terminino
+    while (wait(NULL) > 0){
+        printf("[INFO] Alimentazione (PID: %d): Attesa terminazione figli\n", getpid());
+        //invio il segnale di terminazione ai figli
+        kill(wait(NULL), SIGTERM);
+    }
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
 
     exit(EXIT_SUCCESS);
@@ -123,6 +126,8 @@ int main(int argc, char const *argv[])
     else
     {
         printf("[INFO] Alimentatore (PID: %d): Ricevuto messaggio di inzio Simulazione\n", getpid());
+        send_message(msqid, CONFIRMATION_MSG, "Alimentatore pronto", getpid());
+
     }
     for (;;)
     {

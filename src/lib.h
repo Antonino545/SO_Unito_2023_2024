@@ -30,7 +30,7 @@
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
 #define SEMAPHORE_KEY 12345    // Key dei semafori
 #define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi
-
+#define CONFIRMATION_MSG 7     // Tipo di messaggio per la conferma di ricezione
 /**
  * Struttura del messaggio.
  */

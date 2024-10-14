@@ -102,6 +102,11 @@ void setup_signal_handler()
         perror("[ERROR] Atomo: Errore durante la gestione del segnale di terminazione");
         exit(EXIT_FAILURE);
     }
+    if(sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    {
+         perror("[ERROR] Atomo: Errore durante la gestione del segnale di terminazione");
+        exit(EXIT_FAILURE);
+    }
     if (sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_scissione}, NULL) == -1)
     {
         perror("[ERROR] Atomo: Errore durante la gestione del segnale di start");

@@ -72,11 +72,10 @@ int main(int argc, char const *argv[])
     else
     {
         printf("[INFO] Attivatore (PID: %d): Ricevuto messaggio di inzio divisione\n", getpid());
-    }
+        send_message(msqid, CONFIRMATION_MSG, "Attivatore pronto", getpid());}
     for (;;)
     {
-        printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di Simulazione\n", getpid());
-        killpg(*PID_MASTER, SIGUSR2);
+ 
         struct timespec step;
         step.tv_sec = 1;
         step.tv_nsec = 0;
@@ -86,6 +85,8 @@ int main(int argc, char const *argv[])
             perror("[ERROR] Attivatore: nanosleep fallito");
             exit(EXIT_FAILURE);
         }
+               printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di Simulazione\n", getpid());
+        killpg(*PID_MASTER, SIGUSR2);
     }
 
     while (wait(NULL) > 0)

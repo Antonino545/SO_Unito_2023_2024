@@ -407,13 +407,28 @@ int main()
     printf("---------------------------------------\n");
 
     // Avvio della simulazione principale
-    printf("[IMPORTANT] Master (PID: %d): Processi creati con successo. Inizio simulazione principale\n", getpid());
     int termination = 0;
 
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
     send_message(msqid, START_SIM_ATIV_MSG, "inizia a dividere gli atomi", getpid());
     send_message(msqid, START_SIM_ALIM_MSG, "inizia la simulazione", getpid());
+    // Attendi conferme da attivatore e alimentatore
+    msg_buffer rbuf;
+    int confirmations = 0;
+
+    while (confirmations < 2) {
+        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), CONFIRMATION_MSG, 0) < 0) {
+            perror("[ERROR] Master: Errore durante la ricezione del messaggio di conferma");
+            exit(EXIT_FAILURE);
+        }
+        confirmations++;
+        printf("[INFO] Master (PID: %d): Ricevuta conferma: %s\n", getpid(), rbuf.mtext);
+    }
+
+    printf("[INFO] Master (PID: %d): Tutte le conferme ricevute. Inizio simulazione.\n", getpid());
+
+    printf("------------------------------------------------------------\n");
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
