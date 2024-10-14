@@ -30,9 +30,9 @@ void printStats()
         exit(EXIT_FAILURE);
     }
 
-    sem_id = getSemaphoreSet();
+    sem_stats = getSemaphoreSet();
 
-    semLock(sem_id); // Blocco del semaforo
+    semLock(sem_stats); // Blocco del semaforo
 
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
     printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), stats->Nattivazioni.totale);
@@ -46,7 +46,7 @@ void printStats()
     printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), stats->scorie_prodotte.totale);
     printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), stats->scorie_prodotte.ultimo_secondo);
 
-    semUnlock(sem_id); // Sblocco del semaforo
+    semUnlock(sem_stats); // Sblocco del semaforo
 }
 
 void cleanup()
@@ -73,7 +73,7 @@ void cleanup()
     printStats();
 
     // Rimozione del semaforo
-    if (semctl(sem_id, 0, IPC_RMID) == -1)
+    if (semctl(sem_stats, 0, IPC_RMID) == -1)
     {
         perror("[ERROR] Master: Errore durante la rimozione del semaforo");
     }
@@ -313,8 +313,10 @@ int main()
     attivatore_pid = -1;
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(), getpgrp());
 
-    sem_id = getSemaphoreSet();
-    printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_id);
+    sem_stats = getSemaphoreSet();
+    sem_start = getSemaphoreStartset();
+    semLock(sem_stats); // Blocco del semaforo
+    printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_stats);
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
@@ -411,24 +413,9 @@ int main()
 
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
-    send_message(msqid, START_SIM_ATIV_MSG, "inizia a dividere gli atomi", getpid());
-    send_message(msqid, START_SIM_ALIM_MSG, "inizia la simulazione", getpid());
-    // Attendi conferme da attivatore e alimentatore
-    msg_buffer rbuf;
-    int confirmations = 0;
-
-    while (confirmations < 2) {
-        if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), CONFIRMATION_MSG, 0) < 0) {
-            perror("[ERROR] Master: Errore durante la ricezione del messaggio di conferma");
-            exit(EXIT_FAILURE);
-        }
-        confirmations++;
-        printf("[INFO] Master (PID: %d): Ricevuta conferma: %s\n", getpid(), rbuf.mtext);
-    }
-
-    printf("[INFO] Master (PID: %d): Tutte le conferme ricevute. Inizio simulazione.\n", getpid());
-
-    printf("------------------------------------------------------------\n");
+    semUnlock(sem_start); // Sblocco del semaforo
+    printf("[INFO] Master( PID: %d): Inizio simulazione semaforo sbloccato\n", getpid());
+    
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
@@ -461,7 +448,7 @@ int main()
         printStats();
 
         (*SIM_DURATION)--;
-
+        
         if (*SIM_DURATION > 0)
         {
             stats->Nattivazioni.ultimo_secondo = 0;

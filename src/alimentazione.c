@@ -116,19 +116,11 @@ int main(int argc, char const *argv[])
         exit(1);
     }
     msg_buffer rbuf;
+    sem_start = getSemaphoreStartset();
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
-
-    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), START_SIM_ALIM_MSG, 0) < 0)
-    {
-        perror("[ERROR] Alimentatore: Errore durante la ricezione del messaggio di inzio divisione");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("[INFO] Alimentatore (PID: %d): Ricevuto messaggio di inzio Simulazione\n", getpid());
-        send_message(msqid, CONFIRMATION_MSG, "Alimentatore pronto", getpid());
-
-    }
+    semwait(sem_start);
+    printf("[INFO] Alimentazione (PID: %d): inizio simulazione\n", getpid());
+    
     for (;;)
     {
         for (int i = 0; i < *N_NUOVI_ATOMI; i++)

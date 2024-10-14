@@ -28,7 +28,8 @@
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
 #define MESS_SIZE 30           // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
-#define SEMAPHORE_KEY 12345    // Key dei semafori
+#define SEMAPHORE_STATS_KEY 12345   // Key dei semafori
+#define SEMAPHORE_START_KEY 12346    // Key dei semafori
 #define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi
 #define CONFIRMATION_MSG 7     // Tipo di messaggio per la conferma di ricezione
 /**
@@ -83,8 +84,8 @@ extern int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia
 extern int *PID_MASTER;               // PID del processo master
 extern int *isCleaning;               // flag che indica se la pulizia è in corso
 extern Statistiche *stats;            // puntatore alle statistiche
-extern int sem_id;                    // ID del semaforo
-
+extern int sem_stats;                    // ID del semaforo
+extern int sem_start;                    // ID del semaforo
 /**
  * Genera un numero casuale tra 1 e `max`.
  * @param max Il valore massimo che può essere generato.
@@ -126,12 +127,15 @@ Statistiche *accessStatisticsMemory();
 /**
  * Funzione per bloccare il semaforo.
  */
-void semLock(int sem_id);
+void semLock(int sem_stats);
 
 /**
  * Funzione per sbloccare il semaforo.
  */
-void semUnlock(int sem_id);
+void semUnlock(int sem_stats);
+
+void semwait(int semid);
+
 
 /**
  * Funzione per aggiornare le statistiche, protetta da semafori.
@@ -172,5 +176,8 @@ int getSemaphoreSet();
  * @param semid ID del set di semafori.
  */
 void removeSemaphoreSet(int semid);
+
+int getSemaphoreStartset();
+
 
 #endif // LIB_H

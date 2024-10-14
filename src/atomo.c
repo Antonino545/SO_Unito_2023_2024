@@ -88,7 +88,7 @@ void handle_scissione(int sig)
  * Funzione che gestisce il segnale SIGINT per fermare l'esecuzione del processo atomo.
  * Cambia lo stato della variabile "running" per uscire dal ciclo di attesa.
  */
-void handle_sigint(int sig)
+void handle_sigterm(int sig)
 {
     printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGTERM)\n", getpid());
     isRunning = 0;
@@ -96,23 +96,23 @@ void handle_sigint(int sig)
 
 void setup_signal_handler()
 {
-
-    if (sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    struct sigaction sa;
+    sa.sa_handler = handle_sigterm;  // Stessa funzione per SIGTERM e SIGINT
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;  // Assicura che le chiamate come pause() vengano riavviate automaticamente
+    if (sigaction(SIGTERM, &sa, NULL) == -1)
     {
-        perror("[ERROR] Atomo: Errore durante la gestione del segnale di terminazione");
+        perror("[ERROR] Atomo: Errore durante la gestione del segnale SIGTERM");
         exit(EXIT_FAILURE);
     }
-    if(sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    sa.sa_handler = handle_scissione;  // Cambia handler per SIGUSR2
+    if (sigaction(SIGUSR2, &sa, NULL) == -1)
     {
-         perror("[ERROR] Atomo: Errore durante la gestione del segnale di terminazione");
-        exit(EXIT_FAILURE);
-    }
-    if (sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_scissione}, NULL) == -1)
-    {
-        perror("[ERROR] Atomo: Errore durante la gestione del segnale di start");
+        perror("[ERROR] Atomo: Errore durante la gestione del segnale SIGUSR2");
         exit(EXIT_FAILURE);
     }
 }
+
 
 /**
  * Funzione principale del processo "Atomo".
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     stats = (Statistiche *)accessStatisticsMemory();
 
     // Inizializza i semafori
-    sem_id = getSemaphoreSet();
+    sem_stats = getSemaphoreSet();
 
     key_t key = MESSAGE_QUEUE_KEY;
     if ((msqid = msgget(key, 0666)) < 0)

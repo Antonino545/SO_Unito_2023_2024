@@ -1,7 +1,7 @@
 #include "lib.h"
 #include <stdbool.h>
 
-int sem_id;                    // ID del semaforo
+
 int *N_ATOMI_INIT;             // Numero iniziale di atomi
 int *N_ATOM_MAX;               // Numero atomico massimo
 int *MIN_N_ATOMICO;            // Numero atomico minimo
@@ -14,7 +14,8 @@ int *PID_MASTER;               // PID del processo master
 int *ATOMO_GPID;               // Gruppo di processi degli atomi
 int *isCleaning;               // flag che indica se la pulizia è in corso
 Statistiche *stats;            // Statistiche della simulazione
-
+int sem_stats;                    // ID del semaforo per le statistiche
+int sem_start;                    // ID del semaforo per l'avvio della simulazione
 int generate_random(int max)
 {
     return rand() % max + 1; // Restituisce un numero tra 1 e max
@@ -130,7 +131,7 @@ Statistiche *accessStatisticsMemory()
 int getSemaphoreSet()
 {
 
-    int semid = semget(SEMAPHORE_KEY, 1, IPC_CREAT | 0666); // crea un set di semafori con un semaforo
+    int semid = semget(SEMAPHORE_STATS_KEY, 1, IPC_CREAT | 0666); // crea un set di semafori con un semaforo
     if (semid == -1)
     {
         perror("semget");
@@ -145,6 +146,26 @@ int getSemaphoreSet()
 
     return semid;
 }
+int getSemaphoreStartset()
+{
+    // Crea un set di semafori con un singolo semaforo
+    int semid = semget(SEMAPHORE_START_KEY, 1, IPC_CREAT | 0666);
+    if (semid == -1)
+    {
+        perror("semget");
+        exit(EXIT_FAILURE);
+    }
+
+    // Inizializza il semaforo a 0, così i processi dovranno aspettare lo sblocco
+    if (semctl(semid, 0, SETVAL, 0) == -1)
+    {
+        perror("semctl");
+        exit(EXIT_FAILURE);
+    }
+
+    return semid;
+}
+
 
 void removeSemaphoreSet(int semid)
 {
@@ -155,31 +176,40 @@ void removeSemaphoreSet(int semid)
     }
 }
 
-void semLock(int sem_id)
+void semLock(int sem_stats)
 {
     struct sembuf sb = {0, -1, 0}; // Operazione di lock
-    if (semop(sem_id, &sb, 1) == -1)
+    if (semop(sem_stats, &sb, 1) == -1)
     {
         perror("semop lock");
         exit(EXIT_FAILURE);
     }
 }
 
-void semUnlock(int sem_id)
+void semUnlock(int sem_stats)
 {
     struct sembuf sb = {0, 1, 0}; // Operazione di unlock
-    if (semop(sem_id, &sb, 1) == -1)
+    if (semop(sem_stats, &sb, 1) == -1)
     {
         perror("semop unlock");
+        exit(EXIT_FAILURE);
+    }
+}
+void semwait(int semid)
+{
+    struct sembuf sb = {0, -1, 0};
+    if (semop(semid, &sb, 1) == -1)
+    {
+        perror("semop wait");
         exit(EXIT_FAILURE);
     }
 }
 
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
 {
-    sem_id = getSemaphoreSet();
+    sem_stats = getSemaphoreSet();
 
-    semLock(sem_id);
+    semLock(sem_stats);
 
     stats->Nattivazioni.totale += attivazioni;
     stats->Nattivazioni.ultimo_secondo += attivazioni;
@@ -192,7 +222,7 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
     stats->scorie_prodotte.totale += scorie;
     stats->scorie_prodotte.ultimo_secondo += scorie;
 
-    semUnlock(sem_id);
+    semUnlock(sem_stats);
 }
 
 void send_message(int msqid, long type, const char *format, ...)

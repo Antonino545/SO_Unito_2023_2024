@@ -61,21 +61,15 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
+    sem_start = getSemaphoreStartset();
     send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata", getpid());
-    msg_buffer rbuf;
+    semwait(sem_start);
+    semUnlock(sem_start);
 
-    if (msgrcv(msqid, &rbuf, sizeof(rbuf.mtext), START_SIM_ATIV_MSG, 0) < 0)
-    {
-        perror("[ERROR] Attivatore: Errore durante la ricezione del messaggio di inzio divisione");
-        exit(EXIT_FAILURE);
-    }
-    else
-    {
-        printf("[INFO] Attivatore (PID: %d): Ricevuto messaggio di inzio divisione\n", getpid());
-        send_message(msqid, CONFIRMATION_MSG, "Attivatore pronto", getpid());}
+    printf("[INFO] Attivatore (PID: %d): inizio simulazione\n", getpid());
     for (;;)
     {
- 
+        killpg(*PID_MASTER, SIGUSR2);
         struct timespec step;
         step.tv_sec = 1;
         step.tv_nsec = 0;
@@ -86,7 +80,6 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
                printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di Simulazione\n", getpid());
-        killpg(*PID_MASTER, SIGUSR2);
     }
 
     while (wait(NULL) > 0)
