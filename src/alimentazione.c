@@ -67,7 +67,7 @@ void handle_sigint(int sig)
 
     while (wait(NULL) > 0) {
         printf("[INFO] Alimentazione (PID: %d): Attesa terminazione figli\n", getpid());
-        // Invia il segnale di terminazione ai figli
+        nanosleep(&(struct timespec){.tv_sec = 1}, NULL);
         kill(wait(NULL), SIGTERM);
     }
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());

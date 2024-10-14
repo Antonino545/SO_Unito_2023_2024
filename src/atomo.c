@@ -163,8 +163,8 @@ int main(int argc, char *argv[])
 
     if (*isCleaning == 1)
     {
-        printf("[INFO] Atomo (PID: %d): creazione atomo non riesce perchè fase di cleanup in corso\n", getpid());
-        isRunning = 0;
+        printf("[INFO] Atomo (PID: %d): creazione atomo non riuscita perche siamo in fase di cleanup\n", getpid());
+        exit(EXIT_SUCCESS);
     }
 
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));

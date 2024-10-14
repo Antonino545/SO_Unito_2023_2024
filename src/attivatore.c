@@ -71,15 +71,15 @@ int main(int argc, char const *argv[])
     {
         killpg(*PID_MASTER, SIGUSR2);
         struct timespec step;
-        step.tv_sec = 1;
-        step.tv_nsec = 0;
+        step.tv_sec = 0;
+        step.tv_nsec =* STEP;
 
         if (nanosleep(&step, NULL) < 0)
         {
             perror("[ERROR] Attivatore: nanosleep fallito");
             exit(EXIT_FAILURE);
         }
-               printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di Simulazione\n", getpid());
+        printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di scindersi\n", getpid());
     }
 
     while (wait(NULL) > 0)
