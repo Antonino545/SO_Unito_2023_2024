@@ -424,7 +424,8 @@ int main()
         nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
 
         int energy = stats->energia_prodotta.totale - stats->energia_consumata.totale;
-
+        updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
+     
         if (energy < *ENERGY_DEMAND)
         {
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
@@ -433,7 +434,6 @@ int main()
             termination = 1;
             break;
         }
-
         if ((energy - *ENERGY_DEMAND) > *ENERGY_EXPLODE_THRESHOLD)
         {
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
@@ -443,11 +443,7 @@ int main()
             break;
         }
 
-        updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
-
-   
-
-        if (*SIM_DURATION > 0)
+        if (*SIM_DURATION > 1)
         {
             printStats();
             stats->Nattivazioni.ultimo_secondo = 0;
