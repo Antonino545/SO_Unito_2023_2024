@@ -445,18 +445,20 @@ int main()
 
         updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
 
-        printStats();
+   
 
-        (*SIM_DURATION)--;
-        
         if (*SIM_DURATION > 0)
         {
+            printStats();
             stats->Nattivazioni.ultimo_secondo = 0;
             stats->Nscissioni.ultimo_secondo = 0;
             stats->energia_prodotta.ultimo_secondo = 0;
             stats->energia_consumata.ultimo_secondo = 0;
             stats->scorie_prodotte.ultimo_secondo = 0;
         }
+
+        (*SIM_DURATION)--;
+        
     }
 
     cleanup();

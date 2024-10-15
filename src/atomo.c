@@ -152,22 +152,21 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    setup_signal_handler(); // Notifica al master che l'inizializzazione è completata
-
-    if (setpgid(getpid(), *PID_MASTER) == -1)
-    {
-        printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
-        printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-        isRunning = 0;
-    }
-
+    setup_signal_handler(); 
     if (*isCleaning == 1)
     {
         printf("[INFO] Atomo (PID: %d): creazione atomo non riuscita perche siamo in fase di cleanup\n", getpid());
         exit(EXIT_SUCCESS);
     }
 
+        if (setpgid(getpid(), *PID_MASTER) == -1)
+    {
+        printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
+        printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
+        isRunning = 0;
+    }
     printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
+    
     send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
 
     // Ciclo principale di attesa
@@ -176,8 +175,5 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }
     printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
-    while (wait(NULL) > 0)
-        ;
-
     exit(EXIT_SUCCESS);
 }

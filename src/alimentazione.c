@@ -48,10 +48,12 @@ void createAtomo()
 void handle_sigalrm(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
-    printf("[INFO] Alimentazione (PID: %d): Timeout raggiunto, invio SIGTERM ai figli\n", getpid());
-    while (waitpid(-1, NULL, WNOHANG) > 0) {
-        kill(waitpid(-1, NULL, WNOHANG), SIGTERM);
+    printf("[INFO] Alimentazione (PID: %d): Timeout raggiunto, invio SIGKILL ai figli\n", getpid());
+    while (wait(NULL) > 0)
+    {
+       kill(wait(NULL), SIGKILL);
     }
+    
 }
 
 void handle_sigint(int sig)
