@@ -45,16 +45,7 @@ void createAtomo()
         printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
-void handle_sigalrm(int sig)
-{
-    (void)sig; // Sopprime l'avviso di parametro inutilizzato
-    printf("[INFO] Alimentazione (PID: %d): Timeout raggiunto, invio SIGKILL ai figli\n", getpid());
-    while (wait(NULL) > 0)
-    {
-       kill(wait(NULL), SIGKILL);
-    }
-    
-}
+
 
 void handle_sigint(int sig)
 {
@@ -62,16 +53,8 @@ void handle_sigint(int sig)
 
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
 
-    // Imposta il gestore per SIGALRM
-    signal(SIGALRM, handle_sigalrm);
-    // Imposta un timeout di 10 secondi
-    alarm(10);
 
-    while (wait(NULL) > 0) {
-        printf("[INFO] Alimentazione (PID: %d): Attesa terminazione figli\n", getpid());
-        nanosleep(&(struct timespec){.tv_sec = 1}, NULL);
-        kill(wait(NULL), SIGTERM);
-    }
+    while (wait(NULL) > 0);
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
 
     exit(EXIT_SUCCESS);
