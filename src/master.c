@@ -357,9 +357,9 @@ int main()
         perror("[ERROR] Master: Errore durante l'inizializzazione delle statistiche");
         exit(EXIT_FAILURE);
     }
-    printf("[DEBUG] stats initialized successfully: %p\n", (void *)stats);
 
     printf("[INFO] Master (PID: %d): Memoria condivisa per le statistiche creata e inizializzata con successo.\n", getpid());
+    printStats();
     // Apre il file di configurazione e legge i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL)
@@ -415,7 +415,7 @@ int main()
     printf("Alimentazione PID: %d\n", alimentazione_pid);
     semUnlock(sem_start); // Sblocco del semaforo
     printf("[INFO] Master( PID: %d): Inizio simulazione semaforo sbloccato\n", getpid());
-    
+
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
@@ -425,7 +425,7 @@ int main()
 
         int energy = stats->energia_prodotta.totale - stats->energia_consumata.totale;
         updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
-     
+
         if (energy < *ENERGY_DEMAND)
         {
             printf("[INFO] Master (PID: %d): Energia attuale: %d\n", getpid(), energy);
@@ -454,7 +454,6 @@ int main()
         }
 
         (*SIM_DURATION)--;
-        
     }
 
     cleanup();
