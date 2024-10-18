@@ -82,8 +82,7 @@ int main(int argc, char const *argv[])
         printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di scindersi\n", getpid());
     }
 
-    while (wait(NULL) > 0)
-        ;
+    while (wait(NULL) > 0);
     printf("[INFO] Attivatore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }

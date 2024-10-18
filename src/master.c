@@ -71,6 +71,7 @@ void cleanup()
     printf("\n------------------------------------------------------------\n");
 
     printStats();
+    printf("\n------------------------------------------------------------\n");
 
     // Rimozione del semaforo
     if (semctl(sem_stats, 0, IPC_RMID) == -1)

@@ -275,7 +275,7 @@ void waitForNInitMsg(int msqid, int n)
             exit(EXIT_FAILURE);
         }
 
-        // mostra il messaggio corretto a seconda del tipo
+        /*// mostra il messaggio corretto a seconda del tipo
         if (rbuf.mtype == ATOMO_INIT_MSG)
         {
             printf("[MESSRIC] Master (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
@@ -291,6 +291,6 @@ void waitForNInitMsg(int msqid, int n)
         else
         {
             printf("[MESSRIC] Master (PID: %d) - Message from Unknown Sender: %s\n", getpid(), rbuf.mtext);
-        }
+        }*/
     }
 }

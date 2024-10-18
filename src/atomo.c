@@ -32,7 +32,7 @@ void handle_scissione(int sig)
 
     int numero_atomico_figlio = generate_random(numero_atomico);
     numero_atomico -= numero_atomico_figlio; // Riduce il numero atomico del padre
-    printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
+    //printf("[INFO] Atomo (PID: %d): Ricevuto segnale di scissione (SIGUSR2)\n", getpid());
 
     if (*isCleaning == 1)
     {
@@ -44,27 +44,26 @@ void handle_scissione(int sig)
     if (numero_atomico < *MIN_N_ATOMICO)
     {
         updateStats(0, 0, 0, 0, 1);
-        printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
+        //printf("[INFO] Atomo (PID: %d): Numero atomico minore di MIN_N_ATOMICO. Atomo terminato\n", getpid());
         exit(EXIT_SUCCESS);
     }
 
-    printf("[INFO] Atomo (PID: %d): Scissione avviata \n", getpid());
+    //printf("[INFO] Atomo (PID: %d): Scissione avviata \n", getpid());
 
     // Calcola l'energia liberata
     int energia = energialiberata(numero_atomico, numero_atomico_figlio);
-    printf("[INFO] Atomo (PID: %d): energia liberata: %d \n", getpid(), energia);
 
     // Crea un nuovo processo figlio per rappresentare la scissione
     pid_t pid = fork();
     if (pid == 0)
     {
         // Processo figlio: rappresenta il nuovo atomo creato dalla scissione
-        printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
+       // printf("[INFO] Atomo (PID: %d): Creato da scissione del PID %d\n", getpid(), getppid());
 
         // Converte il numero atomico in stringa e avvia il nuovo processo atomo
         char num_atomico_str[20];
         snprintf(num_atomico_str, sizeof(num_atomico_str), "%d", numero_atomico_figlio);
-        printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico_figlio);
+        //printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico_figlio);
 
         if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
         {
@@ -165,7 +164,7 @@ int main(int argc, char *argv[])
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
         isRunning = 0;
     }
-    printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
+    //printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
     
     send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
 
