@@ -117,7 +117,21 @@ void handle_interruption(int sig)
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa della ricezione di un segnale di interruzione. Chiusura programma.\n", getpid());
     exit(EXIT_SUCCESS);
 }
-
+void hndle_blockorunblock(int sig)
+{
+    if(*isinibitoreactive == 1)
+    {
+        *isinibitoreactive = 0;
+        kill(inibitore_pid, SIGUSR1);
+        printf("[INFO] Master (PID: %d): Inibitore bloccato\n", getpid());
+    }
+    else
+    {
+        kill(inibitore_pid, SIGUSR2);
+        *isinibitoreactive = 1;
+        printf("[INFO] Master (PID: %d): Inibitore sbloccato\n", getpid());
+    }
+}
 /**
  * Questa funzione imposta i gestori di segnali per il processo:
  * - Ignora SIGUSR2 e SIGTERM.
@@ -128,6 +142,7 @@ void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
     signal(SIGUSR1, handle_meltdown);
+    signal(SIGUSR2, hndle_blockorunblock);
 }
 
 /*
