@@ -50,6 +50,7 @@ int main(int argc, char const *argv[])
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
     PID_GROUP_ATOMO = (int *)(shm_ptr + 10 * sizeof(int));
+    stats = accessStatisticsMemory();
 
     setup_signal_handler();
 
@@ -84,9 +85,7 @@ int main(int argc, char const *argv[])
 
     for (;;)
     {
-        //assorbe parte del energia prodotta 
-        int energy_assorbed = stats->energia_prodotta.ultimo_secondo * 0.1; // il 10 percento
-        updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+       
         if (isBlocked)
         {
             printf("[INFO] Inibitore (PID: %d): Bloccato, in attesa di sblocco\n", getpid());
@@ -103,7 +102,7 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
 
-      //  printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
+        printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
         if (rand() % 2 == 0)
         {
             semUnlock(sem_inibitore);
@@ -112,6 +111,11 @@ int main(int argc, char const *argv[])
         {
             semwait(sem_inibitore);
         }
+                        //assorbe parte del energia prodotta 
+        int energy_assorbed = stats->energia_prodotta.ultimo_secondo * 0.1; // il 10 percento
+        printf("[INFO] Inibitore (PID: %d): Assorbo %d di energia\n", getpid(), energy_assorbed);
+        updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+
     }
 
     while (wait(NULL) > 0);
