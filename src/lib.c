@@ -227,7 +227,7 @@ void semwait(int semid)
     }
 }
 
-void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
+void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie, int energia_assorbita, int bilanciamento)
 {
     sem_stats = getSemaphoreStatsSets();
 
@@ -243,6 +243,10 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
     stats->energia_consumata.ultimo_secondo += energia_cons;
     stats->scorie_prodotte.totale += scorie;
     stats->scorie_prodotte.ultimo_secondo += scorie;
+    stats->energia_assorbita.totale += energia_assorbita;
+    stats->energia_assorbita.ultimo_secondo += energia_assorbita;
+    stats->bilanciamento.totale += bilanciamento;
+    stats->bilanciamento.ultimo_secondo += bilanciamento;
 
     semUnlock(sem_stats);
 }

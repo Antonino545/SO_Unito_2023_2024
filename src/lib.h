@@ -72,7 +72,18 @@ typedef struct
         int totale;
         int ultimo_secondo;
     } scorie_prodotte;
-} Statistiche;
+    struct 
+    {
+        int totale;
+        int ultimo_secondo;
+    } energia_assorbita;
+  struct 
+    {
+        int totale;
+        int ultimo_secondo;
+    } bilanciamento;
+}  Statistiche;
+    
 
 extern int *N_ATOMI_INIT;             // Numero iniziale di atomi
 extern int *N_ATOM_MAX;               // Numero atomico massimo
@@ -149,9 +160,10 @@ void semwait(int semid);
  * @param energia_prod Energia prodotta
  * @param energia_cons Energia consumata
  * @param scorie Scorie prodotte
- *
+ *@param energia_assorbita Energia assorbita dall'inibitore
+    *@param bilanciamento Bilanciamento 
  */
-void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie);
+void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie, int energia_assorbita, int bilanciamento);
 
 /**
  * Funzione che invia un messaggio formattato al processo master.

@@ -68,6 +68,7 @@ int main(int argc, char const *argv[])
     }
 
     sem_start = getSemaphoreStartset();
+    sem_stats = getSemaphoreStatsSets();
     if (sem_start == -1)
     {
         perror("[ERROR] Inibitore: Impossibile ottenere il set di semafori per l'avvio");
@@ -83,6 +84,9 @@ int main(int argc, char const *argv[])
 
     for (;;)
     {
+        //assorbe parte del energia prodotta 
+       // int energy_assorbed = stats->energia_prodotta.ultimo_secondo * 0.1; // il 10 percento
+        //updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
         if (isBlocked)
         {
             printf("[INFO] Inibitore (PID: %d): Bloccato, in attesa di sblocco\n", getpid());
@@ -99,7 +103,7 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
 
-        printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
+      //  printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
         if (rand() % 2 == 0)
         {
             semUnlock(sem_inibitore);

@@ -45,7 +45,10 @@ void printStats()
     printf("[INFO] Master (PID: %d): Energia consumata ultimo secondo: %d\n", getpid(), stats->energia_consumata.ultimo_secondo);
     printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), stats->scorie_prodotte.totale);
     printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), stats->scorie_prodotte.ultimo_secondo);
-
+    printf("[INFO] Master (PID: %d): Energia assorbita da inibitore: %d\n", getpid(), stats->energia_assorbita.totale);
+    printf("[INFO] Master (PID: %d): Energia assorbita da inibitore ultimo secondo: %d\n", getpid(), stats->energia_assorbita.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Bilanciamento totale: %d\n", getpid(), stats->bilanciamento.totale);
+    printf("[INFO] Master (PID: %d): Bilanciamento ultimo secondo: %d\n", getpid(), stats->bilanciamento.ultimo_secondo);
     semUnlock(sem_stats); // Sblocco del semaforo
 }
 
@@ -497,9 +500,8 @@ int main()
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
 
         nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
-
         int energy = stats->energia_prodotta.totale - stats->energia_consumata.totale;
-        updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
+        updateStats(0, 0, 0, *ENERGY_DEMAND, 0, 0, 0);
 
         if (energy < *ENERGY_DEMAND)
         {

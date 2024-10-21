@@ -16,7 +16,7 @@ int energialiberata(int n1, int n2)
 {
     int energia_liberata = (n1 * n2) - max(n1, n2);
 
-    updateStats(0, 1, energia_liberata, 0, 0);
+    updateStats(0, 1, energia_liberata, 0, 0, 0, 0);
 
     return energia_liberata;
 }
@@ -28,13 +28,13 @@ int energialiberata(int n1, int n2)
 
 void handle_scissione(int sig)
 {
-    updateStats(1, 0, 0, 0, 0);
+    updateStats(1, 0, 0, 0, 0, 0, 0);
 
     // Controlla se il semaforo è bloccato
     if (isSemaphoreUnlocked(sem_inibitore)  && *isinibitoreactive == 1)
     {
-        printf("[INFO] Atomo (PID: %d): Inibitore ha limitato la scissione dell'atomo.\n", getpid());
-        updateStats(0, 0, 0, 0, 1);
+        //printf("[INFO] Atomo (PID: %d): Inibitore ha limitato la scissione dell'atomo.\n", getpid());
+        updateStats(0, 0, 0, 0, 0, 0, 1);
     }
     else
     {
@@ -49,7 +49,7 @@ void handle_scissione(int sig)
 
         if (numero_atomico < *MIN_N_ATOMICO)
         {
-            updateStats(0, 0, 0, 0, 1);
+            updateStats(0, 0, 0, 0, 1, 0, 0);
             exit(EXIT_SUCCESS);
         }
 
