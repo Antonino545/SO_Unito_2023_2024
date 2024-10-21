@@ -89,7 +89,7 @@ void handle_scissione(int sig)
  */
 void handle_sigterm(int sig)
 {
-    printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGTERM)\n", getpid());
+   // printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGTERM)\n", getpid());
     isRunning = 0;
 }
 
@@ -174,6 +174,6 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }
     while (wait(NULL) > 0);
-    printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
+   // printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
