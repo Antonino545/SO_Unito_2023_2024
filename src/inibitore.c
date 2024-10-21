@@ -93,14 +93,7 @@ int main(int argc, char const *argv[])
             continue; // Skip the rest of the loop if blocked
         }
 
-        struct timespec step;
-        step.tv_sec = INIBITORE_SECONDO;
-        step.tv_nsec = 0;
-        if (nanosleep(&step, NULL) < 0)
-        {
-            perror("[ERROR] Inibitore: nanosleep fallito");
-            exit(EXIT_FAILURE);
-        }
+       
 
         printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
         if (rand() % 2 == 0)
@@ -116,6 +109,14 @@ int main(int argc, char const *argv[])
 
         printf("[INFO] Inibitore (PID: %d): Assorbo %d di energia\n", getpid(), energy_assorbed);
         updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+         struct timespec step;
+        step.tv_sec = INIBITORE_SECONDO;
+        step.tv_nsec = 0;
+        if (nanosleep(&step, NULL) < 0)
+        {
+            perror("[ERROR] Inibitore: nanosleep fallito");
+            exit(EXIT_FAILURE);
+        }
 
     }
 
