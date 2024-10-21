@@ -125,8 +125,6 @@ void handle_interruption(int sig)
  */
 void setup_signal_handler()
 {
-    signal(SIGUSR2, SIG_IGN);
-    signal(SIGTERM, SIG_IGN);
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
     signal(SIGUSR1, handle_meltdown);
 }
