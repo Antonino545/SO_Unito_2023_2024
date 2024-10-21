@@ -119,7 +119,7 @@ int main(int argc, char const *argv[])
     
     for (;;)
     {
-        printf("[INFO] Alimentazione: Creazione di nuovi atomi\n");
+        //printf("[INFO] Alimentazione: Creazione di nuovi atomi\n");
         for (int i = 0; i < *N_NUOVI_ATOMI; i++)
         {
             createAtomo();

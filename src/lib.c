@@ -16,6 +16,7 @@ int *isCleaning;               // flag che indica se la pulizia è in corso
 Statistiche *stats;            // Statistiche della simulazione
 int sem_stats;                    // ID del semaforo per le statistiche
 int sem_start;                    // ID del semaforo per l'avvio della simulazione
+int *PID_GROUP_ATOMO;          // PID del gruppo di processi degli atomi
 int generate_random(int max)
 {
     return rand() % max + 1; // Restituisce un numero tra 1 e max

@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
     MIN_N_ATOMICO = (int *)(shm_ptr + 2 * sizeof(int));
     PID_MASTER = (int *)(shm_ptr + 8 * sizeof(int));
     isCleaning = (int *)(shm_ptr + 9 * sizeof(int));
+    PID_GROUP_ATOMO = (int *)(shm_ptr + 10 * sizeof(int));
     numero_atomico = atoi(argv[1]);
 
     // Inizializza memoria condivisa per le statistiche
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
         exit(EXIT_SUCCESS);
     }
 
-        if (setpgid(getpid(), *PID_MASTER) == -1)
+        if (setpgid(getpid(), *PID_GROUP_ATOMO) == -1)
     {
         printf("[INFO] Atomo (PID: %d): Impossibile impostare il gruppo di processi del figlio\n", getpid());
         printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());

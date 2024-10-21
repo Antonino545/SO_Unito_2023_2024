@@ -51,6 +51,7 @@ int main(int argc, char const *argv[])
     N_ATOM_MAX = (int *)(shm_ptr + 3 * sizeof(int));
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
+    PID_GROUP_ATOMO = (int *)(shm_ptr + 10 * sizeof(int));
 
     setup_signal_handler();
 
@@ -69,7 +70,7 @@ int main(int argc, char const *argv[])
     printf("[INFO] Attivatore (PID: %d): inizio simulazione\n", getpid());
     for (;;)
     {
-        killpg(*PID_MASTER, SIGUSR2);
+        killpg(*PID_GROUP_ATOMO, SIGUSR2);
         struct timespec step;
         step.tv_sec = 0;
         step.tv_nsec =* STEP;
@@ -79,7 +80,7 @@ int main(int argc, char const *argv[])
             perror("[ERROR] Attivatore: nanosleep fallito");
             exit(EXIT_FAILURE);
         }
-        printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di scindersi\n", getpid());
+       //printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di scindersi\n", getpid());
     }
 
     while (wait(NULL) > 0);

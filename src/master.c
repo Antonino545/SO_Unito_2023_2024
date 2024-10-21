@@ -65,7 +65,7 @@ void cleanup()
     time_t start_time = time(NULL);
     while (wait(NULL) > 0)
     {
-        killpg(*PID_MASTER, SIGTERM); // serve per assicurare che tutti i processi atomo siano terminati
+        killpg(*PID_GROUP_ATOMO, SIGTERM); // serve per assicurare che tutti i processi atomo siano terminati
     }
 
     printf("\n------------------------------------------------------------\n");
@@ -309,7 +309,24 @@ void readparameters(FILE *file)
  */
 int main()
 {
-    setpgid(0, 0);
+    pid_t AtomGroup = fork();
+    if (AtomGroup == -1)
+    {
+        perror("[ERROR] Master: Impossibile creare il processo fantasma");
+        exit(EXIT_FAILURE);
+    }
+    else if (AtomGroup == 0)
+    {
+        // Processo fantasma
+        printf("[INFO] Phantom (PID: %d): Inizio esecuzione\n", getpid());
+        setpgid(0, 0); // Imposta il processo fantasma come leader del gruppo di processi
+        pause(); // Metti il processo fantasma in pausa
+        exit(EXIT_SUCCESS);
+    }
+
+    // Processo master
+    setpgid(0, AtomGroup); // Imposta il gruppo di processi del master al PID del processo fantasma
+
     alimentazione_pid = -1;
     attivatore_pid = -1;
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(), getpgrp());
@@ -321,7 +338,7 @@ int main()
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
-    const size_t shm_size = 10 * sizeof(int);
+    const size_t shm_size = 11 * sizeof(int);
     void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
 
     // Puntatori alle variabili nella memoria condivisa
@@ -335,6 +352,8 @@ int main()
     ENERGY_EXPLODE_THRESHOLD = (int *)(shmParamsPtr + 7 * sizeof(int));
     PID_MASTER = (int *)(shmParamsPtr + 8 * sizeof(int));
     isCleaning = (int *)(shmParamsPtr + 9 * sizeof(int));
+    PID_GROUP_ATOMO = (int *)(shmParamsPtr + 10 * sizeof(int));
+    *PID_GROUP_ATOMO = AtomGroup;
     *isCleaning = 0;
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 

@@ -86,6 +86,7 @@ extern int *isCleaning;               // flag che indica se la pulizia è in cor
 extern Statistiche *stats;            // puntatore alle statistiche
 extern int sem_stats;                    // ID del semaforo
 extern int sem_start;                    // ID del semaforo
+extern int *PID_GROUP_ATOMO;          // PID del gruppo di processi degli atomi
 /**
  * Genera un numero casuale tra 1 e `max`.
  * @param max Il valore massimo che può essere generato.
