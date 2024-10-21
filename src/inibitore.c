@@ -85,8 +85,8 @@ int main(int argc, char const *argv[])
     for (;;)
     {
         //assorbe parte del energia prodotta 
-       // int energy_assorbed = stats->energia_prodotta.ultimo_secondo * 0.1; // il 10 percento
-        //updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+        int energy_assorbed = stats->energia_prodotta.ultimo_secondo * 0.1; // il 10 percento
+        updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
         if (isBlocked)
         {
             printf("[INFO] Inibitore (PID: %d): Bloccato, in attesa di sblocco\n", getpid());
