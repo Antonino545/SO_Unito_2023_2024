@@ -528,6 +528,8 @@ int main()
             stats->energia_prodotta.ultimo_secondo = 0;
             stats->energia_consumata.ultimo_secondo = 0;
             stats->scorie_prodotte.ultimo_secondo = 0;
+            stats->energia_assorbita.ultimo_secondo = 0;
+            stats->bilanciamento.ultimo_secondo = 0;
         }
 
         (*SIM_DURATION)--;
