@@ -1,5 +1,5 @@
 #include "lib.h"
-
+#define INIBITORE_SECONDO 1
 int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
@@ -94,8 +94,8 @@ int main(int argc, char const *argv[])
         }
 
         struct timespec step;
-        step.tv_sec = 0;
-        step.tv_nsec = *STEP;
+        step.tv_sec = INIBITORE_SECONDO;
+        step.tv_nsec = 0;
         if (nanosleep(&step, NULL) < 0)
         {
             perror("[ERROR] Inibitore: nanosleep fallito");
@@ -112,7 +112,8 @@ int main(int argc, char const *argv[])
             semwait(sem_inibitore);
         }
                         //assorbe parte del energia prodotta 
-        int energy_assorbed = stats->energia_prodotta.ultimo_secondo * 0.1; // il 10 percento
+        int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 10;
+
         printf("[INFO] Inibitore (PID: %d): Assorbo %d di energia\n", getpid(), energy_assorbed);
         updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
 
