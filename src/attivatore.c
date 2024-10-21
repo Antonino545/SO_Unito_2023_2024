@@ -74,7 +74,6 @@ int main(int argc, char const *argv[])
         struct timespec step;
         step.tv_sec = 0;
         step.tv_nsec =* STEP;
-
         if (nanosleep(&step, NULL) < 0)
         {
             perror("[ERROR] Attivatore: nanosleep fallito");

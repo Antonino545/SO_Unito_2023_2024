@@ -1,7 +1,6 @@
 #include "lib.h"
 #include <stdbool.h>
 
-
 int *N_ATOMI_INIT;             // Numero iniziale di atomi
 int *N_ATOM_MAX;               // Numero atomico massimo
 int *MIN_N_ATOMICO;            // Numero atomico minimo
@@ -14,9 +13,12 @@ int *PID_MASTER;               // PID del processo master
 int *ATOMO_GPID;               // Gruppo di processi degli atomi
 int *isCleaning;               // flag che indica se la pulizia è in corso
 Statistiche *stats;            // Statistiche della simulazione
-int sem_stats;                    // ID del semaforo per le statistiche
-int sem_start;                    // ID del semaforo per l'avvio della simulazione
+int sem_stats;                 // ID del semaforo per le statistiche
+int sem_start;                 // ID del semaforo per l'avvio della simulazione
+int sem_inibitore;             // ID del semaforo per l'inibitore
 int *PID_GROUP_ATOMO;          // PID del gruppo di processi degli atomi
+int *isinibitoreactive;
+
 int generate_random(int max)
 {
     return rand() % max + 1; // Restituisce un numero tra 1 e max
@@ -129,9 +131,8 @@ Statistiche *accessStatisticsMemory()
     return (Statistiche *)shm_ptr;
 }
 
-int getSemaphoreSet()
+int getSemaphoreStatsSets()
 {
-
     int semid = semget(SEMAPHORE_STATS_KEY, 1, IPC_CREAT | 0666); // crea un set di semafori con un semaforo
     if (semid == -1)
     {
@@ -141,12 +142,13 @@ int getSemaphoreSet()
     // Inizializza il semaforo a 1
     if (semctl(semid, 0, SETVAL, 1) == -1)
     {
-        perror("semctl");
+        perror("Semctl erro in SemaphoreStatsSets");
         exit(EXIT_FAILURE);
     }
 
     return semid;
 }
+
 int getSemaphoreStartset()
 {
     // Crea un set di semafori con un singolo semaforo
@@ -167,6 +169,25 @@ int getSemaphoreStartset()
     return semid;
 }
 
+int getSemaphoreInibitoreSet()
+{
+    // Crea un set di semafori con un singolo semaforo
+    int semid = semget(SEMAPHORE_INIBITORE_KEY, 1, IPC_CREAT | 0666);
+    if (semid == -1)
+    {
+        perror("semget");
+        exit(EXIT_FAILURE);
+    }
+
+    // Inizializza il semaforo a 0, così i processi dovranno aspettare lo sblocco
+    if (semctl(semid, 0, SETVAL, 1) == -1)
+    {
+        perror("semctl in getSemaphoreInibitoreSet");
+        exit(EXIT_FAILURE);
+    }
+
+    return semid;
+}
 
 void removeSemaphoreSet(int semid)
 {
@@ -208,7 +229,7 @@ void semwait(int semid)
 
 void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie)
 {
-    sem_stats = getSemaphoreSet();
+    sem_stats = getSemaphoreStatsSets();
 
     semLock(sem_stats);
 
@@ -263,6 +284,11 @@ void send_message(int msqid, long type, const char *format, ...)
             kill(getpid(), SIGTERM);
         }
     }
+}
+
+int isSemaphoreUnlocked(int semid)
+{
+    return semctl(semid, 0, GETVAL);
 }
 
 void waitForNInitMsg(int msqid, int n)

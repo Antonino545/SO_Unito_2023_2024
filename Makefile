@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -std=c99 -D_GNU_SOURCE -Wvla -Wextra -Werror
 
 # Default target
-all: build master atomo alimentazione attivatore
+all: build master atomo alimentazione attivatore inibitore
 
 # Linker flags
 LDFLAGS = -lrt
@@ -21,6 +21,9 @@ atomo: build/lib.o src/atomo.c
 # Build alimentazione target
 alimentazione: build/lib.o src/alimentazione.c
 	$(CC) $(CFLAGS) -o build/alimentazione src/alimentazione.c build/lib.o $(LDFLAGS)
+
+inibitore: build/lib.o src/inibitore.c
+	$(CC) $(CFLAGS) -o build/inibitore src/inibitore.c build/lib.o $(LDFLAGS)
 
 # Build attivatore target
 attivatore: build/lib.o src/attivatore.c

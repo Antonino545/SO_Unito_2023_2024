@@ -22,7 +22,7 @@
 #define ATOMO_INIT_MSG 1
 #define ATTIVATORE_INIT_MSG 2
 #define ALIMENTAZIONE_INIT_MSG 3
-#define TERMINATION_MSG 4 // Tipo di messaggio per la terminazione dell'atomo
+#define INIBITORE_INIT_MSG 4
 #define START_SIM_ATIV_MSG 5
 #define START_SIM_ALIM_MSG 6
 #define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
@@ -30,6 +30,7 @@
 #define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
 #define SEMAPHORE_STATS_KEY 12345   // Key dei semafori
 #define SEMAPHORE_START_KEY 12346    // Key dei semafori
+#define SEMAPHORE_INIBITORE_KEY 44444    // Key dei semafori
 #define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi
 #define CONFIRMATION_MSG 7     // Tipo di messaggio per la conferma di ricezione
 /**
@@ -86,7 +87,9 @@ extern int *isCleaning;               // flag che indica se la pulizia è in cor
 extern Statistiche *stats;            // puntatore alle statistiche
 extern int sem_stats;                    // ID del semaforo
 extern int sem_start;                    // ID del semaforo
+extern int sem_inibitore;                    // ID del semaforo
 extern int *PID_GROUP_ATOMO;          // PID del gruppo di processi degli atomi
+extern int *isinibitoreactive;
 /**
  * Genera un numero casuale tra 1 e `max`.
  * @param max Il valore massimo che può essere generato.
@@ -171,7 +174,7 @@ void waitForNInitMsg(int msqid, int n);
  * Funzione per ottenere l'ID del set di semafori.
  * @return ID del set di semafori.
  */
-int getSemaphoreSet();
+int getSemaphoreStatsSets();
 /**
  * Funzione per rimuovere il set di semafori.
  * @param semid ID del set di semafori.
@@ -180,5 +183,7 @@ void removeSemaphoreSet(int semid);
 
 int getSemaphoreStartset();
 
+int getSemaphoreInibitoreSet();
 
+int isSemaphoreUnlocked(int semid);
 #endif // LIB_H

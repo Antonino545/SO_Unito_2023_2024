@@ -115,7 +115,8 @@ int main(int argc, char const *argv[])
     sem_start = getSemaphoreStartset();
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
     semwait(sem_start);
-    printf("[INFO] Alimentazione (PID: %d): inizio simulazione\n", getpid());
+    semUnlock(sem_start);
+        printf("[INFO] Alimentazione (PID: %d): inizio simulazione\n", getpid());
     
     for (;;)
     {
