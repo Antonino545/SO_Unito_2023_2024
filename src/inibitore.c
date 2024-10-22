@@ -104,8 +104,9 @@ int main(int argc, char const *argv[])
         {
             semwait(sem_inibitore);
         }
-                        //assorbe parte del energia prodotta 
-        int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 10;
+        semLock(sem_stats);
+        int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 10; //assorbe parte del energia prodotta 
+        semUnlock(sem_stats);
 
         printf("[INFO] Inibitore (PID: %d): Assorbo %d di energia\n", getpid(), energy_assorbed);
         updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);

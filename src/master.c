@@ -19,7 +19,7 @@ pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
 pid_t inibitore_pid;     // PID del processo inibitore
 /**
- * Stampa le statistiche della simulazione.
+ * @brief Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
  */
 void printStats()
@@ -126,20 +126,19 @@ void hndle_blockorunblock(int sig)
     {
         *isinibitoreactive = 0;
         kill(inibitore_pid, SIGUSR1);
-        printf("[INFO] Master (PID: %d): Inibitore bloccato\n", getpid());
+        printf("[INFO] Master (PID: %d): Inibitore Attivato\n", getpid());
     }
     else
     {
         kill(inibitore_pid, SIGUSR2);
         *isinibitoreactive = 1;
-        printf("[INFO] Master (PID: %d): Inibitore sbloccato\n", getpid());
-    }
+        printf("[INFO] Master (PID: %d): Inibitore Arrestato\n", getpid());
 }
 /**
- * Questa funzione imposta i gestori di segnali per il processo:
- * - Ignora SIGUSR2 e SIGTERM.
- * - Gestisce SIGINT con la funzione handle_interruption.
- * - Gestisce SIGUSR1 con la funzione handle_meltdown
+ * Imposta i gestori dei segnali per il processo master.
+ * - SIGINT: interruzione del processo.
+ * - SIGUSR1: meltdown.
+ * - SIGUSR2: blocco o sblocco dell'inibitore.
  */
 void setup_signal_handler()
 {
@@ -149,7 +148,7 @@ void setup_signal_handler()
 }
 
 /*
- * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
+Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale. prima di creare il processo controlla se la fase di cleanup è in corso.
  */
 void createAtomo()
 {
@@ -383,13 +382,17 @@ int main()
     {
         perror("[ERROR] Master: E stata inserita una scelta non valida");
         exit(EXIT_FAILURE);
+    }  
+    if(inibitore==1) {
+        printf("[INFO] Master (PID: %d): Inibitore attivato\n", getpid());
+    }else{
+        printf("[INFO] Master (PID: %d): Inibitore non attivato\n", getpid());
     }
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
     const size_t shm_size = 12 * sizeof(int);
     void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
-
     // Puntatori alle variabili nella memoria condivisa
     N_ATOMI_INIT = (int *)shmParamsPtr;
     N_ATOM_MAX = (int *)(shmParamsPtr + sizeof(int));
@@ -430,7 +433,6 @@ int main()
     }
 
     printf("[INFO] Master (PID: %d): Memoria condivisa per le statistiche creata e inizializzata con successo.\n", getpid());
-    printStats();
     // Apre il file di configurazione e legge i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL)
@@ -523,6 +525,7 @@ int main()
         if (*SIM_DURATION > 1)
         {
             printStats();
+            semLock(sem_stats);
             stats->Nattivazioni.ultimo_secondo = 0;
             stats->Nscissioni.ultimo_secondo = 0;
             stats->energia_prodotta.ultimo_secondo = 0;
@@ -530,6 +533,7 @@ int main()
             stats->scorie_prodotte.ultimo_secondo = 0;
             stats->energia_assorbita.ultimo_secondo = 0;
             stats->bilanciamento.ultimo_secondo = 0;
+            semUnlock(sem_stats);
         }
 
         (*SIM_DURATION)--;
