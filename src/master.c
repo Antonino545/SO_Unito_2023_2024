@@ -264,6 +264,9 @@ void createInibitore()
     else
     {
         inibitore_pid = pid;
+        printf("[INFO] Master (PID: %d): Per bloccare o sbloccare l'inibitore inviare il segnale SIGUSR2 al pid %d\n", getpid(), pid);
+        printf("[INFO] Master (PID: %d): KILL -SIGUSR2 %d\n", getpid(), pid);
+        nanosleep((const struct timespec[]){{1, 0}}, NULL);
         printf("[INFO] Master (PID: %d): Processo inibitore creato con PID: %d\n", getpid(), pid);
     }
 }
