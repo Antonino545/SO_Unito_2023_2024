@@ -12,14 +12,14 @@ void handle_sigint(int sig)
     exit(EXIT_SUCCESS);
 }
 
-void handle_sigusr1(int sig)
+void handle_Block(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     isBlocked = 1;
     printf("[INFO] Inibitore (PID: %d): Bloccato\n", getpid());
 }
 
-void handle_sigusr2(int sig)
+void handle_Unlock(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     isBlocked = 0;
@@ -29,8 +29,8 @@ void handle_sigusr2(int sig)
 void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
-    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_sigusr1}, NULL);
-    sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_sigusr2}, NULL);
+    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_Block}, NULL);
+    sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_Unlock}, NULL);
 }
 
 int main(int argc, char const *argv[])

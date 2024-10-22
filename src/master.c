@@ -57,6 +57,7 @@ void cleanup()
     *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
+
     // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
     if (attivatore_pid > 0)
         kill(attivatore_pid, SIGINT);
@@ -133,6 +134,7 @@ void hndle_blockorunblock(int sig)
         kill(inibitore_pid, SIGUSR2);
         *isinibitoreactive = 1;
         printf("[INFO] Master (PID: %d): Inibitore Arrestato\n", getpid());
+}
 }
 /**
  * Imposta i gestori dei segnali per il processo master.
