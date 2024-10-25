@@ -35,7 +35,7 @@ void setup_signal_handler()
 
 int main(int argc, char const *argv[])
 {
-    printf("[INFO] Inibitore (PID: %d, GID: %d): Sono stato appena creato\n", getpid(), getpgrp());
+    printf("[INFO] Inibitore (PID: %d): Inizio inizializzazione\n", getpid());
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
@@ -77,42 +77,38 @@ int main(int argc, char const *argv[])
     }
 
     send_message(msqid, INIBITORE_INIT_MSG, "Inizializzazione completata", getpid());
-
+    printf("[INFO] Inibitore (PID: %d): inizializzazione completata\n", getpid());
     semwait(sem_start);
     semUnlock(sem_start);
-
     printf("[INFO] Inibitore (PID: %d): inizio simulazione\n", getpid());
-
     for (;;)
     {
-       
         if (isBlocked)
         {
             printf("[INFO] Inibitore (PID: %d): Bloccato, in attesa di sblocco\n", getpid());
             pause(); // Wait for a signal
             continue; // Skip the rest of the loop if blocked
         }
-
-       
-
         printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
         if (rand() % 2 == 0)
         {
             semUnlock(sem_inibitore);
+            printf("[INFO] Inibitore (PID: %d): Sblocco le scissioni\n", getpid());
+
         }
         else
-        {
+        {   
             semwait(sem_inibitore);
+            printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
+
         }
         semLock(sem_stats);
         int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 10; //assorbe parte del energia prodotta 
         semUnlock(sem_stats);
-
-        printf("[INFO] Inibitore (PID: %d): Assorbo %d di energia\n", getpid(), energy_assorbed);
         updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
-         struct timespec step;
-        step.tv_sec = INIBITORE_SECONDO;
-        step.tv_nsec = 0;
+        struct timespec step;
+        step.tv_sec = 0;
+        step.tv_nsec = * STEP;
         if (nanosleep(&step, NULL) < 0)
         {
             perror("[ERROR] Inibitore: nanosleep fallito");

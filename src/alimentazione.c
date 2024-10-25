@@ -87,7 +87,7 @@ void setup_signal_handler()
 int main(int argc, char const *argv[])
 {
 
-    printf("[INFO] Alimentazione: Sono stato appena creato\n");
+    printf("[INFO] Alimentatore(PID: %d, GID: %d):Inizio Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
@@ -114,9 +114,10 @@ int main(int argc, char const *argv[])
     msg_buffer rbuf;
     sem_start = getSemaphoreStartset();
     send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
+    printf("[INFO] Alimentazione (PID: %d): inizializzazione completata\n", getpid());
     semwait(sem_start);
     semUnlock(sem_start);
-        printf("[INFO] Alimentazione (PID: %d): inizio simulazione\n", getpid());
+    printf("[INFO] Alimentazione (PID: %d): inizio simulazione\n", getpid());
     
     for (;;)
     {

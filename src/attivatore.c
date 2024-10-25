@@ -37,7 +37,7 @@ void setup_signal_handler()
  */
 int main(int argc, char const *argv[])
 {
-    printf("[INFO] Attivatore(PID: %d, GID: %d): Inizializzazione\n", getpid(), getpgrp());
+    printf("[INFO] Attivatore(PID: %d, GID: %d):Inizio Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
@@ -64,6 +64,8 @@ int main(int argc, char const *argv[])
 
     sem_start = getSemaphoreStartset();
     send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata", getpid());
+    printf("[INFO] Attivatore(PID: %d, GID: %d):Inizio Inizializzazione\n", getpid(), getpgrp());
+
     semwait(sem_start);
     semUnlock(sem_start);
 

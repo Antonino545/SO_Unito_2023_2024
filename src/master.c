@@ -173,7 +173,6 @@ void createAtomo()
     }
     else if (pid == 0)
     {
-        printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
         if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
         {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
@@ -208,7 +207,6 @@ void createAttivatore()
     else
     {
         attivatore_pid = pid;
-        printf("[INFO] Master (PID: %d): Processo attivatore creato con PID: %d\n", getpid(), pid);
     }
 }
 
@@ -238,7 +236,6 @@ void createAlimentazione()
     else
     {
         alimentazione_pid = pid;
-        printf("[INFO] Master (PID: %d): Processo alimentazione creato con PID: %d\n", getpid(), pid);
     }
 }
 void createInibitore()
@@ -252,8 +249,6 @@ void createInibitore()
     }
     else if (pid == 0)
     {
-        printf("[INFO] Inibitore (PID: %d): Avvio processo inibitore\n", getpid());
-
         // Esegue `inibitore`
         if (execlp("./inibitore", "inibitore", NULL) == -1)
         {
@@ -265,10 +260,7 @@ void createInibitore()
     {
         inibitore_pid = pid;
         printf("[INFO] Master (PID: %d): Per bloccare o sbloccare l'inibitore inviare il segnale SIGUSR2 al pid %d\n", getpid(), pid);
-        printf("[INFO] Master (PID: %d): KILL -SIGUSR2 %d\n", getpid(), pid);
-        nanosleep((const struct timespec[]){{1, 0}}, NULL);
-        printf("[INFO] Master (PID: %d): Processo inibitore creato con PID: %d\n", getpid(), pid);
-    }
+        }
 }
 
 /**
@@ -380,8 +372,10 @@ int main()
     
     semLock(sem_stats); // Blocco del semaforo
     printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_stats);
-    //chiedi se si vuole attivare l'inibitore propontendo una scelta 0 spento 1 acceso
     printf("Vuoi attivare l'inibitore? 0 per no 1 per si\n");
+    printf("Inserisci la tua scelta: (0/1)\n");
+    printf("Per sbloccare o bloccare l'inibitore inviare il segnale SIGUSR2 al pid %d\n", getpid());
+    printf("kill -SIGUSR2 %d\n", getpid());
     int inibitore;
     if(scanf("%d", &inibitore) != 1)
     {
@@ -499,8 +493,7 @@ int main()
     printf("Alimentazione PID: %d\n", alimentazione_pid);
     if(inibitore_pid > 0) printf("Inibitore PID: %d\n", inibitore_pid);
     semUnlock(sem_start); // Sblocco del semaforo
-    printf("[INFO] Master( PID: %d): Inizio simulazione semaforo sbloccato\n", getpid());
-
+    printf("[INFO] Master (PID: %d): Inizio simulazione\n", getpid());
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
