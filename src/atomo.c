@@ -34,12 +34,8 @@ void handle_scissione(int sig)
     if (isSemaphoreUnlocked(sem_inibitore)  && *isinibitoreactive == 1)
     {
         //printf("[INFO] Atomo (PID: %d): Inibitore ha limitato la scissione dell'atomo.\n", getpid());
-        if (rand() % 2 == 0){
         updateStats(0, 0, 0, 0, 0, 0, 1);
-        }
-        else{
-            updateStats(0, 0, 0, 0, 1, 0, 0);
-        }
+   
     }
     else
     {
