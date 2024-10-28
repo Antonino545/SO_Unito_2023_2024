@@ -100,9 +100,19 @@ int main(int argc, char const *argv[])
             updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
             if(rand()%2==0)
             {
+                if(Scioniblock==0)
+                {
                 semUnlock(sem_inibitore);
                 Scioniblock=1;
                 printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
+                }
+            }else{
+                if(Scioniblock==1)
+                {
+                    semUnlock(sem_inibitore);
+                    Scioniblock=0;
+                    printf("[INFO] Inibitore (PID: %d): Sblocco le scissioni\n", getpid());
+                }
             }
         }else{
             printf("[INFO] Inibitore (PID: %d): Energia prodotta non sufficiente per l'assorbimento\n", getpid());
