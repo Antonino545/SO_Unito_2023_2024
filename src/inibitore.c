@@ -1,5 +1,5 @@
 #include "lib.h"
-#define INIBITORE_SECONDO 1
+#define MEZZOSECONDO 500000000
 int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
@@ -98,9 +98,12 @@ int main(int argc, char const *argv[])
             printf("[INFO] Inibitore (PID: %d): Soglia di esplosione quasi raggiunta inizio a bloccare le scissioni e assorbire energia\n", getpid());
             int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 2;
             updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
-            semLock(sem_inibitore);
-            Scioniblock=1;
-            printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
+            if(rand()%2==0)
+            {
+                semUnlock(sem_inibitore);
+                Scioniblock=1;
+                printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
+            }
         }else{
             printf("[INFO] Inibitore (PID: %d): Energia prodotta non sufficiente per l'assorbimento\n", getpid());
            if(Scioniblock==1)
@@ -115,7 +118,7 @@ int main(int argc, char const *argv[])
     
         struct timespec step;
         step.tv_sec = 0;
-        step.tv_nsec = * STEP;
+        step.tv_nsec = MEZZOSECONDO;
         if (nanosleep(&step, NULL) < 0)
         {
             perror("[ERROR] Inibitore: nanosleep fallito");
