@@ -3,7 +3,7 @@
 int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
-
+int Scioniblock = 0;
 void handle_sigint(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
@@ -50,6 +50,7 @@ int main(int argc, char const *argv[])
     N_NUOVI_ATOMI = (int *)(shm_ptr + 5 * sizeof(int));
     STEP = (int *)(shm_ptr + 4 * sizeof(int));
     PID_GROUP_ATOMO = (int *)(shm_ptr + 10 * sizeof(int));
+    ENERGY_EXPLODE_THRESHOLD = (int *)(shm_ptr + 7 * sizeof(int));
     stats = accessStatisticsMemory();
 
     setup_signal_handler();
@@ -75,6 +76,7 @@ int main(int argc, char const *argv[])
         perror("[ERROR] Inibitore: Impossibile ottenere il set di semafori per l'avvio");
         exit(EXIT_FAILURE);
     }
+    semUnlock(sem_inibitore);
 
     send_message(msqid, INIBITORE_INIT_MSG, "Inizializzazione completata", getpid());
     printf("[INFO] Inibitore (PID: %d): inizializzazione completata\n", getpid());
@@ -90,22 +92,27 @@ int main(int argc, char const *argv[])
             continue; // Skip the rest of the loop if blocked
         }
         printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
-        if (rand() % 2 == 0)
-        {
-            semUnlock(sem_inibitore);
-            printf("[INFO] Inibitore (PID: %d): Sblocco le scissioni\n", getpid());
-
-        }
-        else
-        {   
-            semwait(sem_inibitore);
-            printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
-
-        }
         semLock(sem_stats);
-        int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 10; //assorbe parte del energia prodotta 
+        if(stats->energia_prodotta.totale> (*ENERGY_EXPLODE_THRESHOLD / 2))
+        {
+            printf("[INFO] Inibitore (PID: %d): Soglia di esplosione quasi raggiunta inizio a bloccare le scissioni e assorbire energia\n", getpid());
+            int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 2;
+            updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+            semLock(sem_inibitore);
+            Scioniblock=1;
+            printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
+        }else{
+            printf("[INFO] Inibitore (PID: %d): Energia prodotta non sufficiente per l'assorbimento\n", getpid());
+           if(Scioniblock==1)
+           {
+               semUnlock(sem_inibitore);
+               Scioniblock=0;
+               printf("[INFO] Inibitore (PID: %d): Sblocco le scissioni\n", getpid());
+           }
+
+        }
         semUnlock(sem_stats);
-        updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+    
         struct timespec step;
         step.tv_sec = 0;
         step.tv_nsec = * STEP;

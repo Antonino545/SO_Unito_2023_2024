@@ -30,8 +30,8 @@ void handle_scissione(int sig)
 {
     updateStats(1, 0, 0, 0, 0, 0, 0);
 
-    // Controlla se il semaforo è bloccato
-    if (isSemaphoreUnlocked(sem_inibitore)  && *isinibitoreactive == 1)
+    // Controlla se il semaforo e bloccato e l'inibitore è attivo
+    if (!isSemaphoreUnlocked(sem_inibitore)  && *isinibitoreactive == 1)
     {
         //printf("[INFO] Atomo (PID: %d): Inibitore ha limitato la scissione dell'atomo.\n", getpid());
         updateStats(0, 0, 0, 0, 0, 0, 1);
