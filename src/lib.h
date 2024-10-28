@@ -1,5 +1,6 @@
 #ifndef LIB_H
 #define LIB_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -18,26 +19,28 @@
 #include <semaphore.h>
 #include <errno.h>
 
-#define ATOMO_INIT_MSG 1// Tipo di messaggio per l'inizializzazione di un atomo
-#define ATTIVATORE_INIT_MSG 2// Tipo di messaggio per l'inizializzazione di un attivatore
-#define ALIMENTAZIONE_INIT_MSG 3// Tipo di messaggio per l'inizializzazione di un alimentatore
-#define INIBITORE_INIT_MSG 4// Tipo di messaggio per l'inizializzazione di un inibitore
-#define START_SIM_ATIV_MSG 5// Tipo di messaggio per l'inizio della simulazione dell'attivatore
-#define START_SIM_ALIM_MSG 6// Tipo di messaggio per l'inizio della simulazione dell'alimentatore
-#define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
-#define MESS_SIZE 30           // Dimensione massima del messaggio
-#define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
-#define SEMAPHORE_STATS_KEY 12345   // Key dei semafori
-#define SEMAPHORE_START_KEY 12346    // Key dei semafori
-#define SEMAPHORE_INIBITORE_KEY 44444    // Key dei semafori
-#define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi
-#define CONFIRMATION_MSG 7     // Tipo di messaggio per la conferma di ricezione
+// Message types
+#define ATOMO_INIT_MSG 1           // Tipo di messaggio per l'inizializzazione di un atomo
+#define ATTIVATORE_INIT_MSG 2      // Tipo di messaggio per l'inizializzazione di un attivatore
+#define ALIMENTAZIONE_INIT_MSG 3   // Tipo di messaggio per l'inizializzazione di un alimentatore
+#define INIBITORE_INIT_MSG 4       // Tipo di messaggio per l'inizializzazione di un inibitore
+#define START_SIM_ATIV_MSG 5       // Tipo di messaggio per l'inizio della simulazione dell'attivatore
+#define START_SIM_ALIM_MSG 6       // Tipo di messaggio per l'inizio della simulazione dell'alimentatore
+#define MSG_TYPE_START_SIM 5       // Tipo di messaggio per l'inizio della simulazione
+#define CONFIRMATION_MSG 7         // Tipo di messaggio per la conferma di ricezione
+
+// Constants
+#define MESS_SIZE 30               // Dimensione massima del messaggio
+#define MESSAGE_QUEUE_KEY 1234     // Key della coda di messaggi
+#define SEMAPHORE_STATS_KEY 12345  // Key dei semafori per le statistiche
+#define SEMAPHORE_START_KEY 12346  // Key dei semafori per l'avvio della simulazione
+#define SEMAPHORE_INIBITORE_KEY 44444 // Key dei semafori per l'inibitore
+#define MES_PERM_RW_ALL 0666       // Permessi di lettura e scrittura per tutti i processi
 
 /**
  * Struttura del messaggio.
  */
-typedef struct
-{
+typedef struct {
     long mtype;
     char mtext[MESS_SIZE];
 } msg_buffer;
@@ -45,45 +48,37 @@ typedef struct
 /**
  * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.
  */
-typedef struct
-{
-    struct
-    {
+typedef struct {
+    struct {
         int totale;
         int ultimo_secondo;
     } Nattivazioni;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } Nscissioni;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } energia_prodotta;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } energia_consumata;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } scorie_prodotte;
-    struct 
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } energia_assorbita;
-    struct 
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } bilanciamento;
-}  Statistiche;
-    
+} Statistiche;
+
 // Variabili globali
 extern int *N_ATOMI_INIT;             // Numero iniziale di atomi
 extern int *N_ATOM_MAX;               // Numero atomico massimo
@@ -185,16 +180,16 @@ void send_message(int msqid, long type, const char *format, ...);
 void waitForNInitMsg(int msqid, int n);
 
 /**
- * Funzione per ottenere l'ID del set di semafori per le statistiche.
- * @return ID del set di semafori.
- */
-int getSemaphoreStatsSets();
-
-/**
  * Funzione per rimuovere il set di semafori.
  * @param semid ID del set di semafori.
  */
 void removeSemaphoreSet(int semid);
+
+/**
+ * Funzione per ottenere l'ID del set di semafori per le statistiche.
+ * @return ID del set di semafori.
+ */
+int getSemaphoreStatsSets();
 
 /**
  * Funzione per ottenere l'ID del set di semafori per l'avvio della simulazione.

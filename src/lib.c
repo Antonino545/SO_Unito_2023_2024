@@ -151,15 +151,12 @@ int getSemaphoreStatsSets()
 
 int getSemaphoreStartset()
 {
-    // Crea un set di semafori con un singolo semaforo
     int semid = semget(SEMAPHORE_START_KEY, 1, IPC_CREAT | 0666);
     if (semid == -1)
     {
         perror("semget");
         exit(EXIT_FAILURE);
     }
-
-    // Inizializza il semaforo a 0, così i processi dovranno aspettare lo sblocco
     if (semctl(semid, 0, SETVAL, 0) == -1)
     {
         perror("semctl");
@@ -171,21 +168,17 @@ int getSemaphoreStartset()
 
 int getSemaphoreInibitoreSet()
 {
-    // Crea un set di semafori con un singolo semaforo
     int semid = semget(SEMAPHORE_INIBITORE_KEY, 1, IPC_CREAT | 0666);
     if (semid == -1)
     {
         perror("semget");
         exit(EXIT_FAILURE);
     }
-
-    // Inizializza il semaforo a 0, così i processi dovranno aspettare lo sblocco
     if (semctl(semid, 0, SETVAL, 1) == -1)
     {
         perror("semctl in getSemaphoreInibitoreSet");
         exit(EXIT_FAILURE);
     }
-
     return semid;
 }
 
