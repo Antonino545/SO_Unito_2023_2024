@@ -4,6 +4,11 @@ int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
 int Scioniblock = 0;
+/**
+ * Funzione gestore del segnale SIGINT. Viene chiamata quando il processo inibitore riceve il segnale SIGINT,
+ * stampando un messaggio di terminazione e chiudendo il processo.
+ * @param sig Il segnale ricevuto (SIGINT).
+ */
 void handle_sigint(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
@@ -11,28 +16,45 @@ void handle_sigint(int sig)
     printf("[INFO] Inibitore (PID: %d): Terminazione completata\n", getpid());
     exit(EXIT_SUCCESS);
 }
-
+/**
+ * Funzione gestore del segnale SIGUSR1. Viene chiamata quando il processo inibitore riceve il segnale SIGUSR1,
+ * BLocca il processo inibitore.
+ */
 void handle_Block(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     isBlocked = 1;
     printf("[INFO] Inibitore (PID: %d): Bloccato\n", getpid());
 }
-
+/**
+ * Funzione gestore del segnale SIGUSR2. Viene chiamata quando il processo inibitore riceve il segnale SIGUSR2,
+ * Sblocca il processo inibitore.
+ */
 void handle_Unlock(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     isBlocked = 0;
     printf("[INFO] Inibitore (PID: %d): Sbloccato\n", getpid());
 }
-
+/**
+ * Funzione che imposta il gestore del segnale SIGINT per il processo inibitore.
+ * Associa il segnale SIGINT alla funzione handle_sigint.
+ * Associa il segnale SIGUSR1 alla funzione handle_Block.
+ * Associa il segnale SIGUSR2 alla funzione handle_Unlock.
+ */
 void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
     sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_Block}, NULL);
     sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_Unlock}, NULL);
 }
-
+/**
+ * Funzione principale del processo "Inibitore".
+ * - Inizializza la memoria condivisa per accedere ai parametri della simulazione.
+ * - Imposta i gestori dei segnali.
+ * - Invia un messaggio di inizializzazione completata e attende il segnale di avvio della simulazione.
+ * - Una volta avviata la simulazione, se la soglia di esplosione è quasi raggiunta, assorbe energia e al 50% decide se bloccare o sbloccare le scissioni.
+ */
 int main(int argc, char const *argv[])
 {
     printf("[INFO] Inibitore (PID: %d): Inizio inizializzazione\n", getpid());
@@ -52,7 +74,6 @@ int main(int argc, char const *argv[])
     PID_GROUP_ATOMO = (int *)(shm_ptr + 10 * sizeof(int));
     ENERGY_EXPLODE_THRESHOLD = (int *)(shm_ptr + 7 * sizeof(int));
     stats = accessStatisticsMemory();
-
     setup_signal_handler();
 
     key_t key = MESSAGE_QUEUE_KEY;
@@ -66,14 +87,17 @@ int main(int argc, char const *argv[])
     if (sem_inibitore == -1)
     {
         perror("[ERROR] Inibitore: Impossibile ottenere il set di semafori per l'inibitore");
-        exit(EXIT_FAILURE);
-    }
-
+        exit(EXIT_FAILURE);}
     sem_start = getSemaphoreStartset();
-    sem_stats = getSemaphoreStatsSets();
     if (sem_start == -1)
     {
         perror("[ERROR] Inibitore: Impossibile ottenere il set di semafori per l'avvio");
+        exit(EXIT_FAILURE);
+    }
+       sem_stats = getSemaphoreStatsSets();
+    if (sem_stats == -1)
+    {
+        perror("[ERROR] Inibitore: Impossibile ottenere il set di semafori per le statistiche");
         exit(EXIT_FAILURE);
     }
     semUnlock(sem_inibitore);
@@ -91,12 +115,11 @@ int main(int argc, char const *argv[])
             pause(); // Wait for a signal
             continue; // Skip the rest of the loop if blocked
         }
-        printf("[INFO] Inibitore (PID: %d): Possibilità di blocco o sblocco\n", getpid());
         semLock(sem_stats);
         if(stats->energia_prodotta.totale> (*ENERGY_EXPLODE_THRESHOLD / 2))
         {
             printf("[INFO] Inibitore (PID: %d): Soglia di esplosione quasi raggiunta inizio a assorbire energia\n", getpid());
-            int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 
+            int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 2;
             updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
             if(rand()%2==0)//ogni mezzo secondo al 50% di probabilità decide se bloccare o sbloccare le scissioni
             {
