@@ -1,6 +1,6 @@
 #include "lib.h"
 #define MEZZOSECONDO 500000000
-#define DEFAULT_ABSORBER_RATE 50
+#define DEFAULT_ABSORBER_RATE 30
 int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
