@@ -1,5 +1,6 @@
 #include "lib.h"
 #define MEZZOSECONDO 500000000
+#define DEFAULT_ABSORBER_RATE 50
 int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
@@ -118,7 +119,7 @@ int main(int argc, char const *argv[])
         semwait(sem_stats);
         if(stats->energia_prodotta.totale> (*ENERGY_EXPLODE_THRESHOLD / 2))
         {
-            int energy_absorbed = stats->energia_prodotta.ultimo_secondo * 20 / 100;
+            int energy_absorbed = stats->energia_prodotta.ultimo_secondo * DEFAULT_ABSORBER_RATE / 100;
             updateStats(0, 0, -energy_absorbed, 0, 0, energy_absorbed, 0);
             if(rand()%2==0)//ogni mezzo secondo al 50% di probabilità decide se bloccare o sbloccare le scissioni
             {
