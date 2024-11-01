@@ -139,7 +139,7 @@ Statistiche *accessStatisticsMemory();
  * Funzione per sbloccare il semaforo.
  * @param sem_stats ID del semaforo da sbloccare.
  */
-void semUnlock(int sem_stats);
+void semUnlock(int semid);
 
 /**
  * Funzione per decrementa il semaforo di 1

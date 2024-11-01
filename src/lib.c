@@ -193,10 +193,10 @@ void removeSemaphoreSet(int semid)
 
 
 
-void semUnlock(int sem_stats)
+void semUnlock(int semid)
 {
     struct sembuf sb = {0, 1, 0}; // Operazione di unlock
-    if (semop(sem_stats, &sb, 1) == -1)
+    if (semop(semid, &sb, 1) == -1)
     {
         perror("semop unlock");
         exit(EXIT_FAILURE);
@@ -291,23 +291,5 @@ void waitForNInitMsg(int msqid, int n)
             perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
         }
-
-        /*// mostra il messaggio corretto a seconda del tipo
-        if (rbuf.mtype == ATOMO_INIT_MSG)
-        {
-            printf("[MESSRIC] Master (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
-        }
-        else if (rbuf.mtype == ATTIVATORE_INIT_MSG)
-        {
-            printf("[MESSRIC] Master (PID: %d) - Message from Attivatore: %s\n", getpid(), rbuf.mtext);
-        }
-        else if (rbuf.mtype == ALIMENTAZIONE_INIT_MSG)
-        {
-            printf("[MESSRIC] Master (PID: %d) - Message from Alimentazione: %s\n", getpid(), rbuf.mtext);
-        }
-        else
-        {
-            printf("[MESSRIC] Master (PID: %d) - Message from Unknown Sender: %s\n", getpid(), rbuf.mtext);
-        }*/
     }
 }
