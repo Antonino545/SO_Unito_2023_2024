@@ -32,7 +32,7 @@ void printStats()
 
     sem_stats = getSemaphoreStatsSets();
 
-    semLock(sem_stats); // Blocco del semaforo
+    semwait(sem_stats); // Blocco del semaforo
 
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
     printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), stats->Nattivazioni.totale);
@@ -370,7 +370,7 @@ int main()
     sem_stats = getSemaphoreStatsSets();
     sem_start = getSemaphoreStartset();
     
-    semLock(sem_stats); // Blocco del semaforo
+    semwait(sem_stats); // Blocco del semaforo
     printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_stats);
     printf("Vuoi attivare l'inibitore? 0 per no 1 per si\n");
     printf("Inserisci la tua scelta: (0/1)\n");
@@ -523,7 +523,7 @@ int main()
         if (*SIM_DURATION > 1)
         {
             printStats();
-            semLock(sem_stats);
+            semwait(sem_stats);
             stats->Nattivazioni.ultimo_secondo = 0;
             stats->Nscissioni.ultimo_secondo = 0;
             stats->energia_prodotta.ultimo_secondo = 0;

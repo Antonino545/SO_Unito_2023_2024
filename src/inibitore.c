@@ -115,26 +115,23 @@ int main(int argc, char const *argv[])
             pause(); // Wait for a signal
             continue; // Skip the rest of the loop if blocked
         }
-        semLock(sem_stats);
+        semwait(sem_stats);
         if(stats->energia_prodotta.totale> (*ENERGY_EXPLODE_THRESHOLD / 2))
         {
-            printf("[INFO] Inibitore (PID: %d): Soglia di esplosione quasi raggiunta inizio a assorbire energia\n", getpid());
-            int energy_assorbed = stats->energia_prodotta.ultimo_secondo / 2;
-            updateStats(0, 0, -energy_assorbed, 0, 0, energy_assorbed, 0);
+            int energy_absorbed = stats->energia_prodotta.ultimo_secondo * 20 / 100;
+            updateStats(0, 0, -energy_absorbed, 0, 0, energy_absorbed, 0);
             if(rand()%2==0)//ogni mezzo secondo al 50% di probabilità decide se bloccare o sbloccare le scissioni
             {
                 if(Scioniblock==0)
                 {
-                semUnlock(sem_inibitore);
+                semwait(sem_inibitore);
                 Scioniblock=1;
-                printf("[INFO] Inibitore (PID: %d): Blocco le scissioni\n", getpid());
                 }
             }else{
                 if(Scioniblock==1)
                 {
                     semUnlock(sem_inibitore);
                     Scioniblock=0;
-                    printf("[INFO] Inibitore (PID: %d): Sblocco le scissioni\n", getpid());
                 }
             }
         }else{

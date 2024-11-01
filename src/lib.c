@@ -191,15 +191,7 @@ void removeSemaphoreSet(int semid)
     }
 }
 
-void semLock(int sem_stats)
-{
-    struct sembuf sb = {0, -1, 0}; // Operazione di lock
-    if (semop(sem_stats, &sb, 1) == -1)
-    {
-        perror("semop lock");
-        exit(EXIT_FAILURE);
-    }
-}
+
 
 void semUnlock(int sem_stats)
 {
@@ -210,6 +202,7 @@ void semUnlock(int sem_stats)
         exit(EXIT_FAILURE);
     }
 }
+
 void semwait(int semid)
 {
     struct sembuf sb = {0, -1, 0};
@@ -224,7 +217,7 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
 {
     sem_stats = getSemaphoreStatsSets();
 
-    semLock(sem_stats);
+    semwait(sem_stats);
 
     stats->Nattivazioni.totale += attivazioni;
     stats->Nattivazioni.ultimo_secondo += attivazioni;

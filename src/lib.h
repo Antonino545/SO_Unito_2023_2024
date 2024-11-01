@@ -133,11 +133,7 @@ void *allocateStatisticsMemory();
  */
 Statistiche *accessStatisticsMemory();
 
-/**
- * Funzione per bloccare il semaforo.
- * @param sem_stats ID del semaforo da bloccare.
- */
-void semLock(int sem_stats);
+
 
 /**
  * Funzione per sbloccare il semaforo.
@@ -146,7 +142,7 @@ void semLock(int sem_stats);
 void semUnlock(int sem_stats);
 
 /**
- * Funzione per attendere che il semaforo diventi disponibile.
+ * Funzione per decrementa il semaforo di 1
  * @param semid ID del semaforo.
  */
 void semwait(int semid);
