@@ -81,7 +81,6 @@ int main(int argc, char const *argv[])
             perror("[ERROR] Attivatore: nanosleep fallito");
             exit(EXIT_FAILURE);
         }
-       //printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di scindersi\n", getpid());
     }
 
     while (wait(NULL) > 0);

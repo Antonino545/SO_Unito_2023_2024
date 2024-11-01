@@ -26,7 +26,6 @@ void createAtomo()
     }
     else if (pid == 0)
     {
-       // printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
         if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
         {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
@@ -42,7 +41,6 @@ void createAtomo()
             perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
         }
-    //    printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
 
@@ -121,7 +119,6 @@ int main(int argc, char const *argv[])
     
     for (;;)
     {
-        //printf("[INFO] Alimentazione: Creazione di nuovi atomi\n");
         for (int i = 0; i < *N_NUOVI_ATOMI; i++)
         {
             createAtomo();

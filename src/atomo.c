@@ -86,7 +86,6 @@ void handle_scissione(int sig)
  */
 void handle_sigterm(int sig)
 {
-   // printf("[INFO] Atomo (PID: %d): Ricevuto segnale di terminazione (SIGTERM)\n", getpid());
     isRunning = 0;
 }
 
