@@ -8,7 +8,7 @@ int msqid;         // ID della coda di messaggi
  * stampando un messaggio di terminazione e chiudendo il processo.
  * @param sig Il segnale ricevuto (SIGINT).
  */
-void handle_sigint(int sig)
+void handle_termination(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
@@ -18,11 +18,11 @@ void handle_sigint(int sig)
 
 /**
  * Funzione che imposta il gestore del segnale SIGINT per il processo attivatore.
- * Associa il segnale SIGINT alla funzione handle_sigint.
+ * Associa il segnale SIGINT alla funzione handle_termination.
  */
 void setup_signal_handler()
 {
-    sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
+    sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_termination}, NULL);
 }
 
 /**

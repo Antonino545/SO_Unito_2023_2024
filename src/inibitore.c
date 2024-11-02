@@ -10,12 +10,12 @@ int Scioniblock = 0;
  * stampando un messaggio di terminazione e chiudendo il processo.
  * @param sig Il segnale ricevuto (SIGINT).
  */
-void handle_sigint(int sig)
+void handle_termination(int sig)
 {
     printf("[INFO] Inibitore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     printf("[INFO] Inibitore (PID: %d): Riumozione del set di semafori\n", getpid());
     removeSemaphoreSet(sem_inibitore);
-    prinf("[INFO] Inibitore (PID: %d): Rimozione del set di semafori completata\n", getpid());
+    printf("[INFO] Inibitore (PID: %d): Rimozione del set di semafori completata\n", getpid());
     
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     printf("[INFO] Inibitore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
@@ -44,13 +44,13 @@ void handle_Unlock(int sig)
 }
 /**
  * Funzione che imposta il gestore del segnale SIGINT per il processo inibitore.
- * Associa il segnale SIGINT alla funzione handle_sigint.
+ * Associa il segnale SIGINT alla funzione handle_termination.
  * Associa il segnale SIGUSR1 alla funzione handle_Block.
  * Associa il segnale SIGUSR2 alla funzione handle_Unlock.
  */
 void setup_signal_handler()
 {
-    sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
+    sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_termination}, NULL);
     sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_Block}, NULL);
     sigaction(SIGUSR2, &(struct sigaction){.sa_handler = handle_Unlock}, NULL);
 }

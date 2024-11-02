@@ -61,10 +61,10 @@ void cleanup()
 
     // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
     if (attivatore_pid > 0)
-        kill(attivatore_pid, SIGINT);
+        kill(attivatore_pid, SIGTERM);
     if (alimentazione_pid > 0)
-        kill(alimentazione_pid, SIGINT);
-    if(inibitore_pid > 0) kill(inibitore_pid, SIGINT);
+        kill(alimentazione_pid, SIGTERM);
+    if(inibitore_pid > 0) kill(inibitore_pid, SIGTERM);
     if (alimentazione_pid < 0 && attivatore_pid < 0 && inibitore_pid < 0)
         killpg(*PID_MASTER, SIGTERM); // per gli atomi iniziali
     // timeout per evitare di rimanere bloccati indefinitamente

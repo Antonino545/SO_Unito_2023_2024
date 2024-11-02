@@ -45,16 +45,13 @@ void createAtomo()
 }
 
 
-void handle_sigint(int sig)
+void handle_termination(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
 
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-
-
     while (wait(NULL) > 0);
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
-
     exit(EXIT_SUCCESS);
 }
 
@@ -64,7 +61,7 @@ void handle_sigint(int sig)
  */
 void setup_signal_handler()
 {
-    if (sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    if (sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_termination}, NULL) == -1)
     {
         perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di terminazione");
         exit(EXIT_FAILURE);
