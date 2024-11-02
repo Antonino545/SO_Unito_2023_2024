@@ -174,6 +174,6 @@ int main(int argc, char *argv[])
         pause(); // Aspetta un segnale
     }
     while (wait(NULL) > 0);
-    printf("[INFO] Atomo (PID: %d): Terminazione completata\n", getpid());
+
     exit(EXIT_SUCCESS);
 }

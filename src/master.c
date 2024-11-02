@@ -84,11 +84,7 @@ void cleanup()
     removeSemaphoreSet(sem_stats);
     printf("[INFO] Master (PID: %d): Rimozione del set di semafori per l'avvio della simulazione\n", getpid());
     removeSemaphoreSet(sem_start);
-    if(inibitore == 1)
-    {
-        printf("[INFO] Master (PID: %d): Rimozione del set di semafori per l'inibitore\n", getpid());
-        removeSemaphoreSet(sem_inibitore);
-    }
+   
     printf("[INFO] Master (PID: %d): Set di semafori rimosso\n", getpid());
     printf("[INFO] Master (PID: %d): Rimozione della coda di messaggi\n", getpid());
     if (msgctl(msqid, IPC_RMID, NULL) < 0)

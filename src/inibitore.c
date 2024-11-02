@@ -12,7 +12,10 @@ int Scioniblock = 0;
  */
 void handle_sigint(int sig)
 {
-    
+    printf("[INFO] Inibitore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
+    printf("[INFO] Inibitore (PID: %d): Riumozione del set di semafori\n", getpid());
+    removeSemaphoreSet(sem_inibitore);
+    prinf("[INFO] Inibitore (PID: %d): Rimozione del set di semafori completata\n", getpid());
     
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     printf("[INFO] Inibitore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
