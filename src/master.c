@@ -60,18 +60,30 @@ void cleanup()
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
 
     // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
-    if (attivatore_pid > 0)
-        kill(attivatore_pid, SIGTERM);
-    if (alimentazione_pid > 0)
-        kill(alimentazione_pid, SIGTERM);
-    if(inibitore_pid > 0) kill(inibitore_pid, SIGTERM);
-    if (alimentazione_pid < 0 && attivatore_pid < 0 && inibitore_pid < 0)
+
+    if (alimentazione_pid < 0 || attivatore_pid < 0 || inibitore_pid < 0)
+    {
         killpg(*PID_MASTER, SIGTERM); // per gli atomi iniziali
+        if (alimentazione_pid > 0)
+        {
+            kill(alimentazione_pid, SIGTERM);
+        }
+        if (attivatore_pid > 0)
+        {
+            kill(attivatore_pid, SIGTERM);
+        }
+        if (inibitore_pid > 0 && inibitore==1)
+        {
+            kill(inibitore_pid, SIGTERM);
+        }
+        killpg(*PID_GROUP_ATOMO, SIGTERM); // per gli atomi
+        printf("[INFO] Master (PID: %d): Terminazione forzata di tutti i processi\n", getpid());
+    }
     // timeout per evitare di rimanere bloccati indefinitamente
     time_t start_time = time(NULL);
     while (wait(NULL) > 0)
     {
-        killpg(*PID_GROUP_ATOMO, SIGTERM); // serve per assicurare che tutti i processi atomo siano terminati
+        killpg(*PID_GROUP_ATOMO, SIGTERM); // serve per assicurarsi che tutti gli atomi vengano terminati
     }
 
     printf("\n------------------------------------------------------------\n");
