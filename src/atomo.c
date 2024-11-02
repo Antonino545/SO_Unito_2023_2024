@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     }
     //printf("[INFO] Atomo (PID: %d): Creato atomo con numero atomico %d e GP(%d) e inizializzato con successo\n", getpid(), numero_atomico, getpgid(0));
     
-    send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata", getpid());
+    send_message(msqid, ATOMO_INIT_MSG, "Inizializzazione completata");
 
     // Ciclo principale di attesa
     while (isRunning)

@@ -63,8 +63,8 @@ int main(int argc, char const *argv[])
     }
 
     sem_start = getSemaphoreStartset();
-    send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata", getpid());
-    printf("[INFO] Attivatore(PID: %d, GID: %d):Inizio Inizializzazione\n", getpid(), getpgrp());
+    send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata");
+    printf("[INFO] Attivatore(PID: %d, GID: %d):Inizializzazione completata\n", getpid(), getpgrp());
 
     semwait(sem_start);
     semUnlock(sem_start);

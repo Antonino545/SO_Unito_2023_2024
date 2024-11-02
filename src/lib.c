@@ -186,7 +186,7 @@ void removeSemaphoreSet(int semid)
 {
     if (semctl(semid, 0, IPC_RMID) == -1)
     {
-        perror("semctl");
+        perror("Error nel rimuovere il set di semafori ");
         exit(EXIT_FAILURE);
     }
 }
@@ -236,42 +236,25 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
 
     semUnlock(sem_stats);
 }
-
-void send_message(int msqid, long type, const char *format, ...)
-{
+void send_message(int msqid, long type, char *messagetext) {
     msg_buffer message;
     message.mtype = type;
-
-    // Inizializza gli argomenti variabili
-    va_list args;
-    va_start(args, format);
-
-    // Usa vsnprintf per formattare il messaggio
-    vsnprintf(message.mtext, sizeof(message.mtext), format, args);
-
-    // Termina l'uso degli argomenti variabili
-    va_end(args);
+    strncpy(message.mtext, messagetext, sizeof(message.mtext) - 1); // Ensure null termination
+    message.mtext[sizeof(message.mtext) - 1] = '\0';
 
     int attempts = 0;
-    while (msgsnd(msqid, &message, sizeof(message.mtext), IPC_NOWAIT) == -1)
-    {
-        if (errno == EAGAIN)
-        {
-            if (attempts < 5)
-            {
+    while (msgsnd(msqid, &message, sizeof(message.mtext), IPC_NOWAIT) == -1) {
+        if (errno == EAGAIN) {
+            if (attempts < 5) {
                 attempts++;
-                usleep(100000);
-            }
-            else
-            {
+                usleep(100000); // 100 ms
+            } else {
                 perror("Errore msgsnd: impossibile inviare il messaggio");
-                kill(getpid(), SIGTERM);
+                exit(EXIT_FAILURE); // End process
             }
-        }
-        else
-        {
+        } else {
             perror("Errore msgsnd: impossibile inviare il messaggio");
-            kill(getpid(), SIGTERM);
+            exit(EXIT_FAILURE); // End process
         }
     }
 }

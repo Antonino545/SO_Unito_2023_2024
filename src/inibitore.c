@@ -12,6 +12,8 @@ int Scioniblock = 0;
  */
 void handle_sigint(int sig)
 {
+    
+    
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     printf("[INFO] Inibitore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
     printf("[INFO] Inibitore (PID: %d): Terminazione completata\n", getpid());
@@ -103,7 +105,7 @@ int main(int argc, char const *argv[])
     }
     semUnlock(sem_inibitore);
 
-    send_message(msqid, INIBITORE_INIT_MSG, "Inizializzazione completata", getpid());
+    send_message(msqid, INIBITORE_INIT_MSG, "Inizializzazione completata");
     printf("[INFO] Inibitore (PID: %d): inizializzazione completata\n", getpid());
     semwait(sem_start);
     semUnlock(sem_start);

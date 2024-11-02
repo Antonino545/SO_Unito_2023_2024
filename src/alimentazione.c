@@ -111,7 +111,7 @@ int main(int argc, char const *argv[])
     }
     msg_buffer rbuf;
     sem_start = getSemaphoreStartset();
-    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
+    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata");
     printf("[INFO] Alimentazione (PID: %d): inizializzazione completata\n", getpid());
     semwait(sem_start);
     semUnlock(sem_start);

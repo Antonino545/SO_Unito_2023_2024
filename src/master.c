@@ -18,6 +18,7 @@ int msqid;               // ID della coda di messaggi
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
 pid_t inibitore_pid;     // PID del processo inibitore
+int inibitore;
 /**
  * @brief Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
@@ -79,22 +80,33 @@ void cleanup()
     printf("\n------------------------------------------------------------\n");
 
     // Rimozione del semaforo
-    if (semctl(sem_stats, 0, IPC_RMID) == -1)
+    printf("[INFO] Master (PID: %d): Rimozione del set di semafori per le statistiche\n", getpid());
+    removeSemaphoreSet(sem_stats);
+    printf("[INFO] Master (PID: %d): Rimozione del set di semafori per l'avvio della simulazione\n", getpid());
+    removeSemaphoreSet(sem_start);
+    if(inibitore == 1)
     {
-        perror("[ERROR] Master: Errore durante la rimozione del semaforo");
+        printf("[INFO] Master (PID: %d): Rimozione del set di semafori per l'inibitore\n", getpid());
+        removeSemaphoreSet(sem_inibitore);
     }
-
-    // Rimozione della coda di messaggi
+    printf("[INFO] Master (PID: %d): Set di semafori rimosso\n", getpid());
+    printf("[INFO] Master (PID: %d): Rimozione della coda di messaggi\n", getpid());
     if (msgctl(msqid, IPC_RMID, NULL) < 0)
     {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi");
     }
+    printf("[INFO] Master (PID: %d): Coda di messaggi rimossa\n", getpid());
 
-    // Rimozione della memoria condivisa per le statistiche
+    printf("[INFO] Master (PID: %d): Rimozione della memoria condivisa\n", getpid());
     if (shm_unlink("/Statistics") == -1)
     {
         perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
     }
+    if(shm_unlink("/Parametres") == -1)
+    {
+        perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per i parametri");
+    }
+    printf("[INFO] Master (PID: %d): Memoria condivisa rimossa\n", getpid());
 }
 
 /**
@@ -376,7 +388,7 @@ int main()
     printf("Inserisci la tua scelta: (0/1)\n");
     printf("Per sbloccare o bloccare l'inibitore inviare il segnale SIGUSR2 al pid %d\n", getpid());
     printf("kill -SIGUSR2 %d\n", getpid());
-    int inibitore;
+    
     if(scanf("%d", &inibitore) != 1)
     {
         perror("[ERROR] Master: E stata inserita una scelta non valida");

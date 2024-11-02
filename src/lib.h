@@ -24,12 +24,6 @@
 #define ATTIVATORE_INIT_MSG 2      // Tipo di messaggio per l'inizializzazione di un attivatore
 #define ALIMENTAZIONE_INIT_MSG 3   // Tipo di messaggio per l'inizializzazione di un alimentatore
 #define INIBITORE_INIT_MSG 4       // Tipo di messaggio per l'inizializzazione di un inibitore
-#define START_SIM_ATIV_MSG 5       // Tipo di messaggio per l'inizio della simulazione dell'attivatore
-#define START_SIM_ALIM_MSG 6       // Tipo di messaggio per l'inizio della simulazione dell'alimentatore
-#define MSG_TYPE_START_SIM 5       // Tipo di messaggio per l'inizio della simulazione
-#define CONFIRMATION_MSG 7         // Tipo di messaggio per la conferma di ricezione
-
-// Constants
 #define MESS_SIZE 30               // Dimensione massima del messaggio
 #define MESSAGE_QUEUE_KEY 1234     // Key della coda di messaggi
 #define SEMAPHORE_STATS_KEY 12345  // Key dei semafori per le statistiche
@@ -163,10 +157,9 @@ void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_c
  * Funzione che invia un messaggio formattato al processo master.
  * @param msqid ID della coda di messaggi.
  * @param type Tipo del messaggio.
- * @param format Formato del messaggio (come printf).
- * @param ... Argomenti variabili per il formato.
+ * @param messagetext Testo del messaggio.
  */
-void send_message(int msqid, long type, const char *format, ...);
+void send_message(int msqid, long type, char *messagetext) ;
 
 /**
  * Funzione che attende un messaggio di inizializzazione da un processo.
