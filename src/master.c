@@ -18,7 +18,7 @@ int msqid;               // ID della coda di messaggi
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
 pid_t inibitore_pid;     // PID del processo inibitore
-int inibitore;
+int inibitore = 0;
 /**
  * @brief Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
@@ -77,7 +77,6 @@ void cleanup()
             kill(inibitore_pid, SIGTERM);
         }
         killpg(*PID_GROUP_ATOMO, SIGTERM); // per gli atomi
-        printf("[INFO] Master (PID: %d): Terminazione forzata di tutti i processi\n", getpid());
     }
     // timeout per evitare di rimanere bloccati indefinitamente
     time_t start_time = time(NULL);
@@ -143,6 +142,7 @@ void handle_interruption(int sig)
 }
 void hndle_blockorunblock(int sig)
 {
+    if(inibitore==1){
     if(*isinibitoreactive == 1)
     {
         *isinibitoreactive = 0;
@@ -154,6 +154,9 @@ void hndle_blockorunblock(int sig)
         kill(inibitore_pid, SIGUSR2);
         *isinibitoreactive = 1;
         printf("[INFO] Master (PID: %d): Inibitore Arrestato\n", getpid());
+}
+}else{
+    printf("[INFO] Master (PID: %d): Inibitore non e stato attivato al inizio del programma\n", getpid());
 }
 }
 /**
