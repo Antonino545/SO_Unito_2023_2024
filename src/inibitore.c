@@ -124,8 +124,14 @@ int main(int argc, char const *argv[])
         semwait(sem_stats);
         if(stats->energia_prodotta.totale> (*ENERGY_EXPLODE_THRESHOLD / 2))
         {
+            if (stats->energia_prodotta.totale > (*ENERGY_EXPLODE_THRESHOLD * 0.7)) {
+            printf("[INFO] Inibitore assorbe piu energia per evitare l'esplosione\n");
+            int energy_absorbed = stats->energia_prodotta.ultimo_secondo * DEFAULT_ABSORBER_RATE * 2 / 100;
+            updateStats(0, 0, -energy_absorbed, 0, 0, energy_absorbed, 0);
+            }else{
             int energy_absorbed = stats->energia_prodotta.ultimo_secondo * DEFAULT_ABSORBER_RATE / 100;
             updateStats(0, 0, -energy_absorbed, 0, 0, energy_absorbed, 0);
+            }
             if(rand()%2==0)//ogni mezzo secondo al 50% di probabilità decide se bloccare o sbloccare le scissioni
             {
                 if(Scioniblock==0)
