@@ -26,7 +26,6 @@ void createAtomo()
     }
     else if (pid == 0)
     {
-       // printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
         if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
         {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
@@ -42,21 +41,17 @@ void createAtomo()
             perror("[Error] PID: %d - Errore durante la ricezione del messaggio di inizializzazione");
             exit(EXIT_FAILURE);
         }
-    //    printf("[MESSRIC] Alimentatore (PID: %d) - Message from Atomo: %s\n", getpid(), rbuf.mtext);
     }
 }
 
 
-void handle_sigint(int sig)
+void handle_termination(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
 
     printf("[INFO] Alimentazione (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
-
-
     while (wait(NULL) > 0);
     printf("[INFO] Alimentazione (PID: %d): Terminazione completata\n", getpid());
-
     exit(EXIT_SUCCESS);
 }
 
@@ -66,7 +61,7 @@ void handle_sigint(int sig)
  */
 void setup_signal_handler()
 {
-    if (sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL) == -1)
+    if (sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_termination}, NULL) == -1)
     {
         perror("[ERROR] Alimentazione: Errore durante la gestione del segnale di terminazione");
         exit(EXIT_FAILURE);
@@ -87,7 +82,7 @@ void setup_signal_handler()
 int main(int argc, char const *argv[])
 {
 
-    printf("[INFO] Alimentazione: Sono stato appena creato\n");
+    printf("[INFO] Alimentatore(PID: %d, GID: %d):Inizio Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
@@ -113,13 +108,14 @@ int main(int argc, char const *argv[])
     }
     msg_buffer rbuf;
     sem_start = getSemaphoreStartset();
-    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata", getpid());
+    send_message(msqid, ALIMENTAZIONE_INIT_MSG, "Inizializzazione completata");
+    printf("[INFO] Alimentazione (PID: %d): inizializzazione completata\n", getpid());
     semwait(sem_start);
+    semUnlock(sem_start);
     printf("[INFO] Alimentazione (PID: %d): inizio simulazione\n", getpid());
     
     for (;;)
     {
-        //printf("[INFO] Alimentazione: Creazione di nuovi atomi\n");
         for (int i = 0; i < *N_NUOVI_ATOMI; i++)
         {
             createAtomo();

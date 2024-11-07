@@ -8,7 +8,7 @@ int msqid;         // ID della coda di messaggi
  * stampando un messaggio di terminazione e chiudendo il processo.
  * @param sig Il segnale ricevuto (SIGINT).
  */
-void handle_sigint(int sig)
+void handle_termination(int sig)
 {
     (void)sig; // Sopprime l'avviso di parametro inutilizzato
     printf("[INFO] Attivatore (PID: %d): Ricevuto segnale di terminazione (SIGINT)\n", getpid());
@@ -18,11 +18,11 @@ void handle_sigint(int sig)
 
 /**
  * Funzione che imposta il gestore del segnale SIGINT per il processo attivatore.
- * Associa il segnale SIGINT alla funzione handle_sigint.
+ * Associa il segnale SIGINT alla funzione handle_termination.
  */
 void setup_signal_handler()
 {
-    sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_sigint}, NULL);
+    sigaction(SIGTERM, &(struct sigaction){.sa_handler = handle_termination}, NULL);
 }
 
 /**
@@ -37,7 +37,7 @@ void setup_signal_handler()
  */
 int main(int argc, char const *argv[])
 {
-    printf("[INFO] Attivatore(PID: %d, GID: %d): Inizializzazione\n", getpid(), getpgrp());
+    printf("[INFO] Attivatore(PID: %d, GID: %d):Inizio Inizializzazione\n", getpid(), getpgrp());
 
     void *shm_ptr = allocateParametresMemory();
     if (shm_ptr == MAP_FAILED)
@@ -63,7 +63,9 @@ int main(int argc, char const *argv[])
     }
 
     sem_start = getSemaphoreStartset();
-    send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata", getpid());
+    send_message(msqid, ATTIVATORE_INIT_MSG, "Inizializzazione completata");
+    printf("[INFO] Attivatore(PID: %d, GID: %d):Inizializzazione completata\n", getpid(), getpgrp());
+
     semwait(sem_start);
     semUnlock(sem_start);
 
@@ -74,13 +76,11 @@ int main(int argc, char const *argv[])
         struct timespec step;
         step.tv_sec = 0;
         step.tv_nsec =* STEP;
-
         if (nanosleep(&step, NULL) < 0)
         {
             perror("[ERROR] Attivatore: nanosleep fallito");
             exit(EXIT_FAILURE);
         }
-       //printf("[INFO] Attivatore (PID: %d): Ordino agli atomi di scindersi\n", getpid());
     }
 
     while (wait(NULL) > 0);

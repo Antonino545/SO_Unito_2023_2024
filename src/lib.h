@@ -19,24 +19,22 @@
 #include <semaphore.h>
 #include <errno.h>
 
-#define ATOMO_INIT_MSG 1
-#define ATTIVATORE_INIT_MSG 2
-#define ALIMENTAZIONE_INIT_MSG 3
-#define TERMINATION_MSG 4 // Tipo di messaggio per la terminazione dell'atomo
-#define START_SIM_ATIV_MSG 5
-#define START_SIM_ALIM_MSG 6
-#define MSG_TYPE_START_SIM 5   // Tipo di messaggio per l'inizio della simulazione
-#define MESS_SIZE 30           // Dimensione massima del messaggio
-#define MESSAGE_QUEUE_KEY 1234 // Key della coda di messaggi
-#define SEMAPHORE_STATS_KEY 12345   // Key dei semafori
-#define SEMAPHORE_START_KEY 12346    // Key dei semafori
-#define MES_PERM_RW_ALL 0666   // Permessi di lettura e scrittura per tutti i processi
-#define CONFIRMATION_MSG 7     // Tipo di messaggio per la conferma di ricezione
+// Message types
+#define ATOMO_INIT_MSG 1           // Tipo di messaggio per l'inizializzazione di un atomo
+#define ATTIVATORE_INIT_MSG 2      // Tipo di messaggio per l'inizializzazione di un attivatore
+#define ALIMENTAZIONE_INIT_MSG 3   // Tipo di messaggio per l'inizializzazione di un alimentatore
+#define INIBITORE_INIT_MSG 4       // Tipo di messaggio per l'inizializzazione di un inibitore
+#define MESS_SIZE 30               // Dimensione massima del messaggio
+#define MESSAGE_QUEUE_KEY 1234     // Key della coda di messaggi
+#define SEMAPHORE_STATS_KEY 12345  // Key dei semafori per le statistiche
+#define SEMAPHORE_START_KEY 12346  // Key dei semafori per l'avvio della simulazione
+#define SEMAPHORE_INIBITORE_KEY 44444 // Key dei semafori per l'inibitore
+#define MES_PERM_RW_ALL 0666       // Permessi di lettura e scrittura per tutti i processi
+
 /**
  * Struttura del messaggio.
  */
-typedef struct
-{
+typedef struct {
     long mtype;
     char mtext[MESS_SIZE];
 } msg_buffer;
@@ -44,35 +42,38 @@ typedef struct
 /**
  * Struttura per le registrazione di una statistica con valore totale e relativo all'ultimo secondo.
  */
-typedef struct
-{
-    struct
-    {
+typedef struct {
+    struct {
         int totale;
         int ultimo_secondo;
     } Nattivazioni;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } Nscissioni;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } energia_prodotta;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } energia_consumata;
-    struct
-    {
+    struct {
         int totale;
         int ultimo_secondo;
     } scorie_prodotte;
+    struct {
+        int totale;
+        int ultimo_secondo;
+    } energia_assorbita;
+    struct {
+        int totale;
+        int ultimo_secondo;
+    } bilanciamento;
 } Statistiche;
 
+// Variabili globali
 extern int *N_ATOMI_INIT;             // Numero iniziale di atomi
 extern int *N_ATOM_MAX;               // Numero atomico massimo
 extern int *MIN_N_ATOMICO;            // Numero atomico minimo
@@ -82,18 +83,22 @@ extern int *N_NUOVI_ATOMI;            // Numero di nuovi atomi
 extern int *SIM_DURATION;             // Durata della simulazione
 extern int *ENERGY_EXPLODE_THRESHOLD; // Soglia di esplosione dell'energia
 extern int *PID_MASTER;               // PID del processo master
-extern int *isCleaning;               // flag che indica se la pulizia è in corso
-extern Statistiche *stats;            // puntatore alle statistiche
-extern int sem_stats;                    // ID del semaforo
-extern int sem_start;                    // ID del semaforo
+extern int *isCleaning;               // Flag che indica se la pulizia è in corso
+extern Statistiche *stats;            // Puntatore alle statistiche
+extern int sem_stats;                 // ID del semaforo per le statistiche
+extern int sem_start;                 // ID del semaforo per l'avvio della simulazione
+extern int sem_inibitore;             // ID del semaforo per l'inibitore
 extern int *PID_GROUP_ATOMO;          // PID del gruppo di processi degli atomi
+extern int *isinibitoreactive;        // Flag che indica se l'inibitore è attivo
+
 /**
  * Genera un numero casuale tra 1 e `max`.
  * @param max Il valore massimo che può essere generato.
+ * @return Un numero casuale tra 1 e `max`.
  */
 int generate_random(int max);
 
-/* macro per il massimo tra due numeri */
+/* Macro per il massimo tra due numeri */
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
 /**
@@ -106,6 +111,7 @@ void *create_shared_memory(const char *shm_name, size_t shm_size);
 
 /**
  * Funzione che imposta la memoria condivisa per i parametri.
+ * @return Puntatore alla memoria condivisa per i parametri.
  */
 void *allocateParametresMemory();
 
@@ -116,69 +122,81 @@ void *allocateParametresMemory();
 void *allocateStatisticsMemory();
 
 /**
- * @brief Accede alla memoria condivisa contenente una struttura `Statistiche`.
- *
- * Apre e mappa la memoria condivisa esistente `/Statistics`, restituendo un puntatore
- * alla struttura `Statistiche`.
- *
- * @return Statistiche* Puntatore alla struttura mappata.
+ * Accede alla memoria condivisa contenente una struttura `Statistiche`.
+ * @return Puntatore alla struttura `Statistiche`.
  */
 Statistiche *accessStatisticsMemory();
 
-/**
- * Funzione per bloccare il semaforo.
- */
-void semLock(int sem_stats);
+
 
 /**
  * Funzione per sbloccare il semaforo.
+ * @param sem_stats ID del semaforo da sbloccare.
  */
-void semUnlock(int sem_stats);
+void semUnlock(int semid);
 
+/**
+ * Funzione per decrementa il semaforo di 1
+ * @param semid ID del semaforo.
+ */
 void semwait(int semid);
-
 
 /**
  * Funzione per aggiornare le statistiche, protetta da semafori.
- * Gli altri processi chiamano questa funzione per aggiornare i dati.
- * @param attivazioni Numero di attivazioni effettuate
- * @param scissioni Numero di scissioni effettuate
- * @param energia_prod Energia prodotta
- * @param energia_cons Energia consumata
- * @param scorie Scorie prodotte
- *
+ * @param attivazioni Numero di attivazioni effettuate.
+ * @param scissioni Numero di scissioni effettuate.
+ * @param energia_prod Energia prodotta.
+ * @param energia_cons Energia consumata.
+ * @param scorie Scorie prodotte.
+ * @param energia_assorbita Energia assorbita dall'inibitore.
+ * @param bilanciamento Bilanciamento.
  */
-void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie);
+void updateStats(int attivazioni, int scissioni, int energia_prod, int energia_cons, int scorie, int energia_assorbita, int bilanciamento);
 
 /**
  * Funzione che invia un messaggio formattato al processo master.
- *
- * @param msqid ID della coda di messaggi
- * @param format Formato del messaggio (come printf)
- * @param type Tipo del messaggio
- * @param ... Argomenti variabili per il formato
+ * @param msqid ID della coda di messaggi.
+ * @param type Tipo del messaggio.
+ * @param messagetext Testo del messaggio.
  */
-void send_message(int msqid, long type, const char *format, ...);
+void send_message(int msqid, long type, char *messagetext) ;
 
 /**
  * Funzione che attende un messaggio di inizializzazione da un processo.
- *
- * @param msqid ID della coda di messaggi
+ * @param msqid ID della coda di messaggi.
+ * @param n Numero di messaggi di inizializzazione da attendere.
  */
 void waitForNInitMsg(int msqid, int n);
 
-/**
- * Funzione per ottenere l'ID del set di semafori.
- * @return ID del set di semafori.
- */
-int getSemaphoreSet();
 /**
  * Funzione per rimuovere il set di semafori.
  * @param semid ID del set di semafori.
  */
 void removeSemaphoreSet(int semid);
 
+/**
+ * Funzione per ottenere l'ID del set di semafori per le statistiche.
+ * @return ID del set di semafori.
+ */
+int getSemaphoreStatsSets();
+
+/**
+ * Funzione per ottenere l'ID del set di semafori per l'avvio della simulazione.
+ * @return ID del set di semafori.
+ */
 int getSemaphoreStartset();
 
+/**
+ * Funzione per ottenere l'ID del set di semafori per l'inibitore.
+ * @return ID del set di semafori.
+ */
+int getSemaphoreInibitoreSet();
+
+/**
+ * Funzione per verificare se il semaforo è sbloccato.
+ * @param semid ID del semaforo.
+ * @return 1 se il semaforo è sbloccato, 0 altrimenti.
+ */
+int isSemaphoreUnlocked(int semid);
 
 #endif // LIB_H

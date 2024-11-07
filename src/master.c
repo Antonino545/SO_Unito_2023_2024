@@ -17,9 +17,10 @@
 int msqid;               // ID della coda di messaggi
 pid_t attivatore_pid;    // PID del processo attivatore
 pid_t alimentazione_pid; // PID del processo alimentazione
-
+pid_t inibitore_pid;     // PID del processo inibitore
+int inibitore = 0;
 /**
- * Stampa le statistiche della simulazione.
+ * @brief Stampa le statistiche della simulazione.
  * Usa un semaforo per garantire che nessun altro processo modifichi le statistiche durante la stampa.
  */
 void printStats()
@@ -30,9 +31,9 @@ void printStats()
         exit(EXIT_FAILURE);
     }
 
-    sem_stats = getSemaphoreSet();
+    sem_stats = getSemaphoreStatsSets();
 
-    semLock(sem_stats); // Blocco del semaforo
+    semwait(sem_stats); // Blocco del semaforo
 
     printf("[INFO] Master (PID: %d): Statistiche della simulazione\n", getpid());
     printf("[INFO] Master (PID: %d): Attivazioni totali: %d\n", getpid(), stats->Nattivazioni.totale);
@@ -45,7 +46,10 @@ void printStats()
     printf("[INFO] Master (PID: %d): Energia consumata ultimo secondo: %d\n", getpid(), stats->energia_consumata.ultimo_secondo);
     printf("[INFO] Master (PID: %d): Scorie prodotte totali: %d\n", getpid(), stats->scorie_prodotte.totale);
     printf("[INFO] Master (PID: %d): Scorie prodotte ultimo secondo: %d\n", getpid(), stats->scorie_prodotte.ultimo_secondo);
-
+    printf("[INFO] Master (PID: %d): Energia assorbita da inibitore: %d\n", getpid(), stats->energia_assorbita.totale);
+    printf("[INFO] Master (PID: %d): Energia assorbita da inibitore ultimo secondo: %d\n", getpid(), stats->energia_assorbita.ultimo_secondo);
+    printf("[INFO] Master (PID: %d): Bilanciamento totale: %d\n", getpid(), stats->bilanciamento.totale);
+    printf("[INFO] Master (PID: %d): Bilanciamento ultimo secondo: %d\n", getpid(), stats->bilanciamento.ultimo_secondo);
     semUnlock(sem_stats); // Sblocco del semaforo
 }
 
@@ -54,18 +58,30 @@ void cleanup()
     *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
+
     // Invia il segnale di terminazione a tutti i processi nel gruppo di processi
-    if (attivatore_pid > 0)
-        kill(attivatore_pid, SIGINT);
-    if (alimentazione_pid > 0)
-        kill(alimentazione_pid, SIGINT);
-    if (alimentazione_pid < 0 && attivatore_pid < 0)
+
+   
         killpg(*PID_MASTER, SIGTERM); // per gli atomi iniziali
+        if (alimentazione_pid > 0)
+        {
+            kill(alimentazione_pid, SIGTERM);
+        }
+        if (attivatore_pid > 0)
+        {
+            kill(attivatore_pid, SIGTERM);
+        }
+        if (inibitore_pid > 0 && inibitore==1)
+        {
+            kill(inibitore_pid, SIGTERM);
+        }
+        killpg(*PID_GROUP_ATOMO, SIGTERM); // per gli atomi
+    
     // timeout per evitare di rimanere bloccati indefinitamente
     time_t start_time = time(NULL);
     while (wait(NULL) > 0)
     {
-        killpg(*PID_GROUP_ATOMO, SIGTERM); // serve per assicurare che tutti i processi atomo siano terminati
+        killpg(*PID_GROUP_ATOMO, SIGTERM); // serve per assicurarsi che tutti gli atomi vengano terminati
     }
 
     printf("\n------------------------------------------------------------\n");
@@ -74,22 +90,29 @@ void cleanup()
     printf("\n------------------------------------------------------------\n");
 
     // Rimozione del semaforo
-    if (semctl(sem_stats, 0, IPC_RMID) == -1)
-    {
-        perror("[ERROR] Master: Errore durante la rimozione del semaforo");
-    }
-
-    // Rimozione della coda di messaggi
+    printf("[INFO] Master (PID: %d): Rimozione del set di semafori per le statistiche\n", getpid());
+    removeSemaphoreSet(sem_stats);
+    printf("[INFO] Master (PID: %d): Rimozione del set di semafori per l'avvio della simulazione\n", getpid());
+    removeSemaphoreSet(sem_start);
+   
+    printf("[INFO] Master (PID: %d): Set di semafori rimosso\n", getpid());
+    printf("[INFO] Master (PID: %d): Rimozione della coda di messaggi\n", getpid());
     if (msgctl(msqid, IPC_RMID, NULL) < 0)
     {
         perror("[ERROR] Master: Errore durante la rimozione della coda di messaggi");
     }
+    printf("[INFO] Master (PID: %d): Coda di messaggi rimossa\n", getpid());
 
-    // Rimozione della memoria condivisa per le statistiche
+    printf("[INFO] Master (PID: %d): Rimozione della memoria condivisa\n", getpid());
     if (shm_unlink("/Statistics") == -1)
     {
         perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per le statistiche");
     }
+    if(shm_unlink("/Parametres") == -1)
+    {
+        perror("[ERROR] Master: Errore durante la rimozione della memoria condivisa per i parametri");
+    }
+    printf("[INFO] Master (PID: %d): Memoria condivisa rimossa\n", getpid());
 }
 
 /**
@@ -116,21 +139,40 @@ void handle_interruption(int sig)
     printf("[TERMINATION] Master (PID: %d): Simulazione terminata a causa della ricezione di un segnale di interruzione. Chiusura programma.\n", getpid());
     exit(EXIT_SUCCESS);
 }
-
+void hndle_blockorunblock(int sig)
+{
+    if(inibitore==1){
+    if(*isinibitoreactive == 1)
+    {
+        *isinibitoreactive = 0;
+        kill(inibitore_pid, SIGUSR1);
+        printf("[INFO] Master (PID: %d): Inibitore Attivato\n", getpid());
+    }
+    else
+    {
+        kill(inibitore_pid, SIGUSR2);
+        *isinibitoreactive = 1;
+        printf("[INFO] Master (PID: %d): Inibitore Arrestato\n", getpid());
+}
+}else{
+    printf("[INFO] Master (PID: %d): Inibitore non e stato attivato al inizio del programma\n", getpid());
+}
+}
 /**
- * Questa funzione imposta i gestori di segnali per il processo:
- * - Ignora SIGUSR2 e SIGTERM.
- * - Gestisce SIGINT con la funzione handle_interruption.
- * - Gestisce SIGUSR1 con la funzione handle_meltdown
+ * Imposta i gestori dei segnali per il processo master.
+ * - SIGINT: interruzione del processo.
+ * - SIGUSR1: meltdown.
+ * - SIGUSR2: blocco o sblocco dell'inibitore.
  */
 void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
     signal(SIGUSR1, handle_meltdown);
+    signal(SIGUSR2, hndle_blockorunblock);
 }
 
 /*
- * Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale.
+Crea un nuovo processo figlio per eseguire il programma `atomo` con un numero atomico casuale. prima di creare il processo controlla se la fase di cleanup è in corso.
  */
 void createAtomo()
 {
@@ -153,7 +195,6 @@ void createAtomo()
     }
     else if (pid == 0)
     {
-        printf("[INFO] Atomo (PID: %d): Avvio processo atomo con numero atomico %d\n", getpid(), numero_atomico);
         if (execlp("./atomo", "atomo", num_atomico_str, NULL) == -1)
         {
             perror("[ERROR] Atomo: execlp fallito durante l'esecuzione del processo atomo");
@@ -188,7 +229,6 @@ void createAttivatore()
     else
     {
         attivatore_pid = pid;
-        printf("[INFO] Master (PID: %d): Processo attivatore creato con PID: %d\n", getpid(), pid);
     }
 }
 
@@ -218,8 +258,31 @@ void createAlimentazione()
     else
     {
         alimentazione_pid = pid;
-        printf("[INFO] Master (PID: %d): Processo alimentazione creato con PID: %d\n", getpid(), pid);
     }
+}
+void createInibitore()
+{
+    pid_t pid = fork();
+
+    if (pid < 0)
+    { // Errore nella creazione del processo
+        perror("[ERROR] Master: Fork fallita durante la creazione di un Inibitore");
+        handle_meltdown(SIGUSR1);
+    }
+    else if (pid == 0)
+    {
+        // Esegue `inibitore`
+        if (execlp("./inibitore", "inibitore", NULL) == -1)
+        {
+            perror("[ERROR] Inibitore: execlp fallito durante l'esecuzione del processo inibitore");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        inibitore_pid = pid;
+        printf("[INFO] Master (PID: %d): Per bloccare o sbloccare l'inibitore inviare il segnale SIGUSR2 al pid %d\n", getpid(), pid);
+        }
 }
 
 /**
@@ -315,30 +378,42 @@ int main()
     }
     else if (AtomGroup == 0)
     {
-        // Processo fantasma
-        printf("[INFO] Phantom (PID: %d): Inizio esecuzione\n", getpid());
         setpgid(0, 0); // Imposta il processo fantasma come leader del gruppo di processi
         pause(); // Metti il processo fantasma in pausa
         exit(EXIT_SUCCESS);
     }
 
     // Processo master
-    setpgid(0, AtomGroup); // Imposta il gruppo di processi del master al PID del processo fantasma
-
     alimentazione_pid = -1;
     attivatore_pid = -1;
+    inibitore_pid = -1;
     printf("[INFO] Master (PID: %d): Inizio esecuzione del programma principale il mio gruppo di processi è %d\n", getpid(), getpgrp());
 
-    sem_stats = getSemaphoreSet();
+    sem_stats = getSemaphoreStatsSets();
     sem_start = getSemaphoreStartset();
-    semLock(sem_stats); // Blocco del semaforo
+    
+    semwait(sem_stats); // Blocco del semaforo
     printf("[INFO] Master (PID: %d): Semaphore set initialized with ID: %d\n", getpid(), sem_stats);
+    printf("Vuoi attivare l'inibitore? 0 per no 1 per si\n");
+    printf("Inserisci la tua scelta: (0/1)\n");
+    printf("Per sbloccare o bloccare l'inibitore inviare il segnale SIGUSR2 al pid %d\n", getpid());
+    printf("kill -SIGUSR2 %d\n", getpid());
+    
+    if(scanf("%d", &inibitore) != 1)
+    {
+        perror("[ERROR] Master: E stata inserita una scelta non valida");
+        exit(EXIT_FAILURE);
+    }  
+    if(inibitore==1) {
+        printf("[INFO] Master (PID: %d): Inibitore attivato\n", getpid());
+    }else{
+        printf("[INFO] Master (PID: %d): Inibitore non attivato\n", getpid());
+    }
 
     // Configura la memoria condivisa
     const char *shm_name = "/Parametres";
-    const size_t shm_size = 11 * sizeof(int);
+    const size_t shm_size = 12 * sizeof(int);
     void *shmParamsPtr = create_shared_memory(shm_name, shm_size);
-
     // Puntatori alle variabili nella memoria condivisa
     N_ATOMI_INIT = (int *)shmParamsPtr;
     N_ATOM_MAX = (int *)(shmParamsPtr + sizeof(int));
@@ -351,7 +426,9 @@ int main()
     PID_MASTER = (int *)(shmParamsPtr + 8 * sizeof(int));
     isCleaning = (int *)(shmParamsPtr + 9 * sizeof(int));
     PID_GROUP_ATOMO = (int *)(shmParamsPtr + 10 * sizeof(int));
+    isinibitoreactive = (int *)(shmParamsPtr + 11 * sizeof(int));
     *PID_GROUP_ATOMO = AtomGroup;
+    *isinibitoreactive = inibitore;
     *isCleaning = 0;
     printf("[INFO] Master (PID: %d): Memoria condivisa mappata con successo. Inizio lettura del file di configurazione\n", getpid());
 
@@ -377,7 +454,6 @@ int main()
     }
 
     printf("[INFO] Master (PID: %d): Memoria condivisa per le statistiche creata e inizializzata con successo.\n", getpid());
-    printStats();
     // Apre il file di configurazione e legge i parametri
     FILE *file = fopen("../Data/parameters.txt", "r");
     if (file == NULL)
@@ -425,24 +501,29 @@ int main()
     createAlimentazione();
     waitForNInitMsg(msqid, 1);
     printf("---------------------------------------\n");
-
+    if(*isinibitoreactive == 1)
+    {
+        printf("[INFO] Master (PID: %d): Creazione del processo inibitore\n", getpid());
+        createInibitore();
+        waitForNInitMsg(msqid, 1);
+        printf("---------------------------------------\n");
+    }
     // Avvio della simulazione principale
     int termination = 0;
 
     printf("Attivatore PID: %d\n", attivatore_pid);
     printf("Alimentazione PID: %d\n", alimentazione_pid);
+    if(inibitore_pid > 0) printf("Inibitore PID: %d\n", inibitore_pid);
     semUnlock(sem_start); // Sblocco del semaforo
-    printf("[INFO] Master( PID: %d): Inizio simulazione semaforo sbloccato\n", getpid());
-
+    printf("[INFO] Master (PID: %d): Inizio simulazione\n", getpid());
     while (*SIM_DURATION > 0)
     {
         printf("------------------------------------------------------------\n");
         printf("[INFO] SIM_DURATION attuale: %d\n", *SIM_DURATION);
 
         nanosleep((const struct timespec[]){{1, 0}}, NULL); // Ogni secondo
-
         int energy = stats->energia_prodotta.totale - stats->energia_consumata.totale;
-        updateStats(0, 0, 0, *ENERGY_DEMAND, 0);
+        updateStats(0, 0, 0, *ENERGY_DEMAND, 0, 0, 0);
 
         if (energy < *ENERGY_DEMAND)
         {
@@ -464,11 +545,15 @@ int main()
         if (*SIM_DURATION > 1)
         {
             printStats();
+            semwait(sem_stats);
             stats->Nattivazioni.ultimo_secondo = 0;
             stats->Nscissioni.ultimo_secondo = 0;
             stats->energia_prodotta.ultimo_secondo = 0;
             stats->energia_consumata.ultimo_secondo = 0;
             stats->scorie_prodotte.ultimo_secondo = 0;
+            stats->energia_assorbita.ultimo_secondo = 0;
+            stats->bilanciamento.ultimo_secondo = 0;
+            semUnlock(sem_stats);
         }
 
         (*SIM_DURATION)--;
