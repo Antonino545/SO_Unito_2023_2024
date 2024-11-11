@@ -55,6 +55,7 @@ void printStats()
 
 void cleanup()
 {
+    
     *isCleaning = 1;
     printf("------------------------------------------------------------\n");
     printf("[INFO] Master (PID: %d): Avvio della pulizia\n", getpid());
@@ -77,8 +78,6 @@ void cleanup()
         }
         killpg(*PID_GROUP_ATOMO, SIGTERM); // per gli atomi
     
-    // timeout per evitare di rimanere bloccati indefinitamente
-    time_t start_time = time(NULL);
     while (wait(NULL) > 0)
     {
         killpg(*PID_GROUP_ATOMO, SIGTERM); // serve per assicurarsi che tutti gli atomi vengano terminati
@@ -146,13 +145,13 @@ void hndle_blockorunblock(int sig)
     {
         *isinibitoreactive = 0;
         kill(inibitore_pid, SIGUSR1);
-        printf("[INFO] Master (PID: %d): Inibitore Attivato\n", getpid());
+        printf("[INFO] Master (PID: %d): Inibitore Arrestato\n", getpid());
     }
     else
     {
         kill(inibitore_pid, SIGUSR2);
         *isinibitoreactive = 1;
-        printf("[INFO] Master (PID: %d): Inibitore Arrestato\n", getpid());
+        printf("[INFO] Master (PID: %d): Inibitore Riattivato\n", getpid());
 }
 }else{
     printf("[INFO] Master (PID: %d): Inibitore non e stato attivato al inizio del programma\n", getpid());

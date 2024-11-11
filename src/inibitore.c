@@ -4,7 +4,7 @@
 int isRunning = 1; // Flag che indica se il processo è in esecuzione
 int msqid;         // ID della coda di messaggi
 int isBlocked = 0; // Flag to indicate if the inhibitor is blocked
-int Scioniblock = 0;
+int Scissioniblock = 0;
 /**
  * Funzione gestore del segnale SIGINT. Viene chiamata quando il processo inibitore riceve il segnale SIGINT,
  * stampando un messaggio di terminazione e chiudendo il processo.
@@ -132,25 +132,25 @@ int main(int argc, char const *argv[])
             int energy_absorbed = stats->energia_prodotta.ultimo_secondo * DEFAULT_ABSORBER_RATE / 100;
             updateStats(0, 0, -energy_absorbed, 0, 0, energy_absorbed, 0);
             }
-            if(rand()%2==0)//ogni mezzo secondo al 50% di probabilità decide se bloccare o sbloccare le scissioni
+            if(rand()%2==0) //ogni mezzo secondo al 50% di probabilità decide se bloccare o sbloccare le scissioni
             {
-                if(Scioniblock==0)
+                if(Scissioniblock==0)
                 {
                 semwait(sem_inibitore);
-                Scioniblock=1;
+                Scissioniblock=1;
                 }
             }else{
-                if(Scioniblock==1)
+                if(Scissioniblock==1)
                 {
                     semUnlock(sem_inibitore);
-                    Scioniblock=0;
+                    Scissioniblock=0;
                 }
             }
         }else{
-           if(Scioniblock==1)
+           if(Scissioniblock==1)
            {
                semUnlock(sem_inibitore);
-               Scioniblock=0;
+               Scissioniblock=0;
                printf("[INFO] Inibitore (PID: %d): Sblocco le scissioni\n", getpid());
            }
 
