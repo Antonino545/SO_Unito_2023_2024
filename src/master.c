@@ -166,8 +166,8 @@ void hndle_blockorunblock(int sig)
 void setup_signal_handler()
 {
     sigaction(SIGINT, &(struct sigaction){.sa_handler = handle_interruption}, NULL);
-    signal(SIGUSR1, handle_meltdown);
-    signal(SIGUSR2, hndle_blockorunblock);
+    sigaction(SIGUSR1, &(struct sigaction){.sa_handler = handle_meltdown}, NULL);
+    sigaction(SIGUSR2, &(struct sigaction){.sa_handler = hndle_blockorunblock}, NULL);
 }
 
 /*
