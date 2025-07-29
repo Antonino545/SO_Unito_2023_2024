@@ -1,10 +1,37 @@
-Build docker in caso ci siano modifiche nel dockerfile
-docker build --platform linux/amd64 -t ubuntu-so  .
-Run docker per mac di Antonino
-docker run -it --name SO-Project -v "/Users/antonino/Documents/Project/Unito Project/SO-2024":/SO-2024 ubuntu-so      
-Run docker per linux di Antonino
-docker run -it --name SO-Project -v "/home/antonino54/Documents/Project/Unito/SO-2024:/SO-2024" ubuntu-so
+## SO-2023/2024 Project – University of Turin
 
-Se Docker e gia in esecuzione
+### 🛠️ Build the Docker Image
+
+If you modify the `Dockerfile`, rebuild the image with:
+
+```bash
+docker build --platform linux/amd64 -t ubuntu-so .
+```
+
+---
+
+### 🚀 Run the Docker Container
+
+Replace `/absolute/path/to/your/project` with the full path to your project directory on your system.
+
+```bash
+docker run -it --name SO-Project -v "/absolute/path/to/your/project":/SO-2024 ubuntu-so
+```
+
+### 🔄 If Docker is Already Running
+
+To check running containers:
+
+```bash
 docker ps
-docker exec -it Ubuntu-SO bash
+```
+
+To access the container’s terminal:
+
+```bash
+docker exec -it SO-Project bash
+```
+
+> 💡 *Make sure the container name is correct when using `docker exec`.*
+
+---
